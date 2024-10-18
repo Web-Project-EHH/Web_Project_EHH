@@ -105,7 +105,7 @@ def exists(category_id: int = None, name: str = None) -> bool:
     return bool(category)
 
 
-def delete(category_id: int, delete_topics: bool = None) -> JSONResponse | NotFoundException:
+def delete(category_id: int, delete_topics: bool = False) -> JSONResponse | NotFoundException:
 
     """
     Delete a category from the database, optionally deleting associated topics and replies.
@@ -113,7 +113,7 @@ def delete(category_id: int, delete_topics: bool = None) -> JSONResponse | NotFo
     Args:
         category_id (int): The ID of the category to be deleted.
         delete_topics (bool, optional): A flag indicating whether to delete associated topics
-                                         and replies (default is None)
+                                         and replies (default is False)
 
     Returns:
         JSONResponse: A response indicating the success of the deletion

@@ -52,7 +52,7 @@ def update_category(old_category: Category, new_category: Category) -> JSONRespo
 
 
 @router.delete('/', response_model=None)
-def delete_category(category_id: int, delete_topics: bool = None) -> JSONResponse | HTTPException:
+def delete_category(category_id: int = Query(int), delete_topics: bool = Query(False)) -> JSONResponse | HTTPException:
 
     try:
         response = categories_services.delete(category_id, delete_topics)
