@@ -3,12 +3,12 @@ from fastapi.responses import JSONResponse
 from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryResponse
 from typing import List
-from common.responses import NoContent
 from common.exceptions import ConflictException, NotFoundException
 
 
 def get_categories(category_id: int = None, name: str = None, 
-                   sort_by: str = None, sort: str = None) -> CategoryResponse | List[CategoryResponse] | HTTPException:
+                   sort_by: str = None, sort: str = None,
+                   limit: int = 10, offset: int = 0) -> CategoryResponse | List[CategoryResponse] | HTTPException:
 
     """
     Retrieve categories from the database based on optional filters.
@@ -43,11 +43,17 @@ def get_categories(category_id: int = None, name: str = None,
         
         query += f" {sort.upper()}"
 
+    query += ''' LIMIT ? OFFSET ?'''
+    params.extend([limit, offset])
+
     categories = read_query(query, tuple(params))
     
-    # Return single category if one is found, otherwise return a list
-    if len(categories) < 2:
-        return next((CategoryResponse.from_query_result(*row) for row in categories), None)
+    if not categories:
+        raise NotFoundException('No matching categories found')
+
+    # Return a single object if one is found, otherwise return a list of objects
+    elif len(categories) < 2:
+        return next((CategoryResponse.from_query_result(*row) for row in categories))
     
     else:
         return [CategoryResponse.from_query_result(*obj) for obj in categories]

@@ -1,9 +1,10 @@
+from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 
 class Category(BaseModel):
 
-    id: int = None
-    name: str
+    id: Optional[int] = None
+    name: str = Field(min_length=2, max_length=30, description='Category name must be between 2 and 30 characters')
     is_locked: bool
     is_private: bool
 
