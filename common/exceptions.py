@@ -1,14 +1,17 @@
-class ConflictException(Exception):
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+from fastapi import HTTPException
 
-class NotFoundException(Exception):
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+class ConflictException(HTTPException):
+    def __init__(self, status_code: int = 409, detail: str = "Conflict"):
+        super().__init__(status_code=status_code, detail=detail)
 
-class ForbiddenException(Exception):
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+class NotFoundException(HTTPException):
+    def __init__(self, status_code: int = 404, detail: str = "Not Found"):
+        super().__init__(status_code=status_code, detail=detail)
+
+class ForbiddenException(HTTPException):
+    def __init__(self, status_code: int = 403, detail: str = "Forbidden"):
+        super().__init__(status_code=status_code, detail=detail)
+
+class BadRequestException(HTTPException):
+    def __init__(self, status_code: int = 400, detail: str = "Bad Request"):
+        super().__init__(status_code=status_code, detail=detail)
