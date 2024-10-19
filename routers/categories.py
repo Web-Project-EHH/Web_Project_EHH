@@ -2,7 +2,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from services import categories_services
 from fastapi import APIRouter, HTTPException
-from common.exceptions import ConflictException, NotFoundException
+from common.exceptions import ConflictException, NotFoundException, BadRequestException, ForbiddenException
 from data.models.category import Category, CategoryResponse
 from typing import List
 from fastapi import Query
@@ -21,60 +21,52 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    limit: int = Query(default=10, ge=1),
                    offset: int = Query(default=0, ge=0)) -> List[CategoryResponse] | CategoryResponse | HTTPException:
 
-    try:
-
-        categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
+    categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset)
-        return categories
-
-    except NotFoundException as e:
-        raise HTTPException(status_code=404, detail=e.message)
     
+    if not categories:
+        raise NotFoundException(detail="No matching categories found")
+
+    return categories
 
 
 @router.post('/', response_model=None)
-def create_category(category: Category) -> JSONResponse | HTTPException:
-
-    try:
+def create_category(category: Category) -> Category | HTTPException:
 
         new_category = categories_services.create(category)
 
-        return JSONResponse(content={'message': f'Category {new_category.name} with ID: {new_category.id} has been created'},
-                                status_code=201)
+        if not new_category:
+            raise BadRequestException(detail="Category could not be created")
 
-    except ConflictException as e:
-        
-        raise HTTPException(status_code=409, detail=e.message)
+        return new_category
 
 
 @router.put('/', response_model=None)
-def update_category(old_category: Category, new_category: Category) -> JSONResponse | HTTPException:
+def update_category(old_category: Category, new_category: Category) -> Category | HTTPException:
     
-    old_category_id = categories_services.get_id(old_category.name)
-
     updated = categories_services.update(old_category, new_category)
 
     if not updated:
-        raise HTTPException(status_code=400, detail='Category could not be updated')
+        raise BadRequestException(detail='Category  could not be updated')
 
-    return JSONResponse(content={'message': f'Category with ID: {old_category_id} has been updated'},
-                        status_code=200)
+    return updated
 
 
 @router.delete('/', response_model=None)
 def delete_category(category_id: int = Query(int), delete_topics: bool = Query(False)) -> JSONResponse | HTTPException:
 
     try:
+
         response = categories_services.delete(category_id, delete_topics)
+        
+        if not response:
+            raise BadRequestException(detail='Category could not be deleted')
+
         return response
-
-    except NotFoundException as nf:
-
-        raise HTTPException(status_code=404, detail=nf.message)
     
     except IntegrityError:
-
-        raise HTTPException(status_code=403, detail='Cannot delete a category that includes topics.')
+        
+        raise ForbiddenException(detail='Cannot delete a category that includes topics.')
 
 
 

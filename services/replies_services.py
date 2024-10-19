@@ -4,12 +4,12 @@ from fastapi.responses import JSONResponse
 from data.database import read_query, insert_query, update_query
 from data.models.reply import Reply
 from typing import List
-from common.exceptions import ConflictException, NotFoundException
+from common.exceptions import ConflictException, NotFoundException, ForbiddenException
 
 def get_replies(reply_id: int = None, text: str = None, user_id: int = None, user_name: str = None,
                 topic_id: int = None, topic_title: str = None, sort_by: str = None, sort: str = None,
                 start_date: datetime = None, end_date: datetime = None, limit: int = 10,
-                offset: int = 0) -> List[Reply] | Reply | HTTPException:
+                offset: int = 0) -> List[Reply] | Reply:
     
     query = '''SELECT reply_id, text, user_id, topic_id, created, edited FROM replies WHERE 1=1'''
     params = []
@@ -53,12 +53,31 @@ def get_replies(reply_id: int = None, text: str = None, user_id: int = None, use
 
     replies = read_query(query, tuple(params))
 
-    if not replies:
-        raise NotFoundException('No matching replies found')
-
-    # Return a single object if one is found, otherwise return a list of objects
-    elif len(replies) < 2:
-        return next((Reply.from_query_result(*row) for row in replies))
-    
-    else:
+    # Return a list of objects if more than one is found, otherwise return a single object
+    if len(replies) > 1:
         return [Reply.from_query_result(*obj) for obj in replies]
+
+    else:
+        return next((Reply.from_query_result(*row) for row in replies), None)
+    
+    
+
+def two_replies_exist(reply_text: int) -> bool:
+
+    replies = read_query('''SELECT COUNT(*) FROM replies WHERE text = ? LIMIT 2''', (reply_text,))
+
+    return True if replies[0][0] == 2 else False
+    
+
+def create(reply: Reply) -> Reply | HTTPException | None:
+
+    if two_replies_exist:
+        raise ForbiddenException('Cannot post the same reply more than twice')
+    
+    generated_id = insert_query('''INSERT INTO replies (text, user_id, topic_id, created, edited) VALUES (?, ?, ?, ?, ?)''',
+                                (reply.text, reply.user_id, reply.topic_id, reply.created, reply.edited))
+    
+    reply.id = generated_id
+
+    return reply if reply else None
+

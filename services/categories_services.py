@@ -8,7 +8,7 @@ from common.exceptions import ConflictException, NotFoundException
 
 def get_categories(category_id: int = None, name: str = None, 
                    sort_by: str = None, sort: str = None,
-                   limit: int = 10, offset: int = 0) -> CategoryResponse | List[CategoryResponse] | HTTPException:
+                   limit: int = 10, offset: int = 0) -> CategoryResponse | List[CategoryResponse] | None:
 
     """
     Retrieve categories from the database based on optional filters.
@@ -47,19 +47,17 @@ def get_categories(category_id: int = None, name: str = None,
     params.extend([limit, offset])
 
     categories = read_query(query, tuple(params))
-    
-    if not categories:
-        raise NotFoundException('No matching categories found')
 
-    # Return a single object if one is found, otherwise return a list of objects
-    elif len(categories) < 2:
-        return next((CategoryResponse.from_query_result(*row) for row in categories))
-    
-    else:
+
+    # Return a list of objects if more than one are found, otherwise return a single object
+    if len(categories) > 1:
         return [CategoryResponse.from_query_result(*obj) for obj in categories]
     
+    else:
+        return next((CategoryResponse.from_query_result(*row) for row in categories), None)
+    
 
-def create(category: Category) -> Category | ConflictException:
+def create(category: Category) -> Category | HTTPException | None:
     """
     Create a new category in the database.
 
@@ -80,7 +78,7 @@ def create(category: Category) -> Category | ConflictException:
 
     category.id = generated_id
 
-    return category
+    return category if category else None
     
 
 def exists(category_id: int = None, name: str = None) -> bool:
@@ -111,7 +109,7 @@ def exists(category_id: int = None, name: str = None) -> bool:
     return bool(category)
 
 
-def delete(category_id: int, delete_topics: bool = False) -> JSONResponse | NotFoundException:
+def delete(category_id: int, delete_topics: bool = False) -> JSONResponse | HTTPException:
 
     """
     Delete a category from the database, optionally deleting associated topics and replies.
@@ -152,13 +150,13 @@ def delete(category_id: int, delete_topics: bool = False) -> JSONResponse | NotF
         update_query('''DELETE FROM topics WHERE category_id = ?''', (category_id,))
 
     #Finally delete the category
-    update_query('''DELETE FROM categories WHERE category_id = ?''', (category_id,))
+    deleted = update_query('''DELETE FROM categories WHERE category_id = ?''', (category_id,))
 
     return JSONResponse(content={'message': f'Category {category_name} with ID:{category_id} has been deleted' +
-                   (", along with its topics." if (delete_topics and topics) else ".")}, status_code=200)
+                   (", along with its topics." if (delete_topics and topics) else ".")}, status_code=200) if deleted else None
     
 
-def update(old_category: Category, new_category: Category) -> Category:
+def update(old_category: Category, new_category: Category) -> Category | Exception | None:
 
     """
     Update the details of an existing category in the database.
@@ -177,20 +175,20 @@ def update(old_category: Category, new_category: Category) -> Category:
     """
 
     if not exists(name=old_category.name):
-        raise HTTPException(status_code=404, detail='Category not found')
+        raise NotFoundException(status_code=404, detail='Category not found')
     
     if exists(name=new_category.name):
-        raise HTTPException(status_code=409, detail='Category with such name already exists')
+        raise ConflictException(status_code=409, detail='Category with such name already exists')
     
     #Take the new parameters if given, otherwise keep the old ones
     merged = Category(name=new_category.name or old_category.name,
                       is_locked=new_category.is_locked or old_category.is_locked,
                       is_private=new_category.is_private or old_category.is_private)
     
-    update_query('''UPDATE categories SET name = ?, is_locked = ?, is_private = ? WHERE name = ?''',
+    updated = update_query('''UPDATE categories SET name = ?, is_locked = ?, is_private = ? WHERE name = ?''',
                  (merged.name, merged.is_locked, merged.is_private, old_category.name))
 
-    return merged
+    return merged if (merged and updated) else None
 
 
 def has_topics(category_id: int) -> bool:
