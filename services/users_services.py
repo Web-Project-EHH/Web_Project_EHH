@@ -4,21 +4,20 @@ from data.database import read_query
 from data.models.vote import Vote
 
 
-def has_voted(user_id: int, reply_id: int) -> Vote:
-
+def has_voted(user_id: int, reply_id: int) -> Vote | None:
+    
     """
     Checks if a user has voted on a specific reply.
-    
+
     Args:
         user_id (int): The ID of the user.
         reply_id (int): The ID of the reply.
-    
+
     Returns:
-        Vote: The vote object if the user has voted on the reply, otherwise None.
-    
+        Vote | None: A Vote object if the user has voted on the reply, otherwise None.
+
     Raises:
-        NotFoundException: If the user does not exist.
-        NotFoundException: If the reply does not exist.
+        NotFoundException: If the user or the reply does not exist.
     """
 
     if not exists(user_id):
@@ -33,16 +32,6 @@ def has_voted(user_id: int, reply_id: int) -> Vote:
 
 
 def exists(user_id: int) -> bool:
-    
-    """
-    Check if a user exists in the database.
-    
-    Args:
-        user_id (int): The ID of the user to check.
-    
-    Returns:
-        bool: True if the user exists, False otherwise.
-    """
     
     user = read_query('''SELECT user_id FROM users WHERE user_id = ?''', (user_id,))
 
