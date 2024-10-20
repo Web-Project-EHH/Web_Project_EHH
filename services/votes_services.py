@@ -3,22 +3,26 @@ from data.database import update_query
 from services import replies_services, users_services
 
 
-def vote(reply_id: int, user_id: int, type: bool):
+def vote(reply_id: int, user_id: int, type: bool) -> str | None:
 
     """
-    Casts a vote on a reply by a user. If the user has already voted on the reply, 
-    it updates or deletes the vote based on the current vote type.
-    
+    Cast a vote on a reply by a user. The vote can be an upvote or a downvote, or get deleted if the user has
+    voted the same way already.
+
     Args:
         reply_id (int): The ID of the reply being voted on.
         user_id (int): The ID of the user casting the vote.
-        type (bool): The type of vote (True for upvote, False for downvote).
-    
-    Raises:
-        NotFoundException: If the reply does not exist.
-    
+        type (bool): The type of vote. True for upvote, False for downvote.
+
     Returns:
-        String: A response indicating the result of the vote action.
+        str | None: A message indicating the result of the vote action. Possible values are:
+            - 'vote deleted': If the user had already voted with the same type and the vote was deleted.
+            - 'upvoted': If the vote was cast as an upvote.
+            - 'downvoted': If the vote was cast as a downvote.
+            - None: If no action was taken (e.g., if the reply does not exist).
+
+    Raises:
+        NotFoundException: If the reply with the given reply_id does not exist.
     """
     
     if not replies_services.exists(reply_id):
@@ -27,30 +31,29 @@ def vote(reply_id: int, user_id: int, type: bool):
     current_vote = users_services.has_voted(reply_id=reply_id, user_id=user_id)
     response = None
 
-    if current_vote:
+    if current_vote: # Check if the there is a vote already and:
         
-        if current_vote.type == type:
+        if current_vote.type == type: # if it's the same type, delete it
             deleted_vote = update_query('''DELETE FROM votes WHERE user_id = ? AND reply_id = ?''', (user_id, reply_id))
             
             if deleted_vote:
                 response = 'vote deleted'
         
-        else:
+        else: # change it, if it's a different type
             changed_vote = update_query('''UPDATE votes SET type = ? WHERE user_id = ? AND reply_id = ?''', (type, user_id, reply_id))
             if changed_vote:
-                if type == True:
+                if type == True: # return True if changed to an upvote
                     response = 'upvoted'
-                elif type == False:
+                elif type == False: # othewise return False
                     response = 'downvoted'
     
-    else:
+    else: # Otherwise create a new vote
         vote = update_query('''INSERT INTO votes (user_id, reply_id, type) VALUES(?, ?, ?)''', (user_id, reply_id, type))
        
         if vote:
             if type == True:
-                    response = 'upvoted'
+                response = 'upvoted'
             elif type == False:
                 response = 'downvoted'
         
-
     return response

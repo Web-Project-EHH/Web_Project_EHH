@@ -6,7 +6,9 @@ from data.models.reply import Reply, ReplyResponse
 from services import replies_services, votes_services
 from datetime import datetime
 
+
 router = APIRouter(prefix='/replies')
+
 
 @router.get('/', response_model=None)
 def get_replies(reply_id: Optional[int] = Query(default=None), 
@@ -20,7 +22,7 @@ def get_replies(reply_id: Optional[int] = Query(default=None),
                    start_date: Optional[datetime] = Query(default=None),
                    end_date: Optional[datetime] = Query(default=None),
                    limit: int = Query(default=10, ge=1),
-                   offset: int = Query(default=0, ge=0)) -> List[Reply] | Reply | HTTPException:
+                   offset: int = Query(default=0, ge=0)) -> List[Reply] | Reply:
 
     replies = replies_services.get_replies(reply_id=reply_id, text=text, user_name=user_name, user_id=user_id, topic_id=topic_id,
                                            topic_title=topic_title, sort_by=sort_by, sort=sort, start_date=start_date,
@@ -33,7 +35,7 @@ def get_replies(reply_id: Optional[int] = Query(default=None),
     
 
 @router.post('/', response_model=Reply)
-def create_reply(reply: Reply) -> Reply | HTTPException:
+def create_reply(reply: Reply) -> Reply:
 
         reply = replies_services.create(reply)
 
@@ -43,7 +45,7 @@ def create_reply(reply: Reply) -> Reply | HTTPException:
         return reply
 
 @router.post('/{reply_id}/vote', response_model=None)
-def vote(reply_id: int, user_id: int, type: bool):
+def vote(reply_id: int, user_id: int, type: bool) -> JSONResponse:
     
     vote = votes_services.vote(reply_id=reply_id, user_id=user_id,type=type)
                                     
@@ -61,7 +63,7 @@ def vote(reply_id: int, user_id: int, type: bool):
 
 
 @router.put('/', response_model=None)
-def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse | HTTPException:
+def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse:
 
 	edited = replies_services.edit_text(old_reply, new_reply)
 
@@ -72,7 +74,7 @@ def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyRespo
 
 
 @router.delete('/', response_model=None)
-def delete_reply(reply_id: int) -> JSONResponse | HTTPException:
+def delete_reply(reply_id: int) -> JSONResponse:
 
 	deleted = replies_services.delete(reply_id)
 

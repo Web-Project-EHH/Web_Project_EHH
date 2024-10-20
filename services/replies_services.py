@@ -1,36 +1,35 @@
 from datetime import datetime
-from fastapi import HTTPException
 from data.database import read_query, insert_query, update_query
 from data.models.reply import Reply, ReplyResponse
 from typing import List
-from common.exceptions import ConflictException, NotFoundException, ForbiddenException, BadRequestException
-from services import users_services
+from common.exceptions import NotFoundException
 
 def get_replies(reply_id: int = None, text: str = None, user_id: int = None, user_name: str = None,
                 topic_id: int = None, topic_title: str = None, sort_by: str = None, sort: str = None,
                 start_date: datetime = None, end_date: datetime = None, limit: int = 10,
-                offset: int = 0) -> List[Reply] | Reply:
+                offset: int = 0) -> List[Reply] | Reply | None:
     
     """
-    Retrieve replies from the database based on various filtering and sorting criteria.
+    Retrieve replies from the database based on various filters and sorting options.
 
     Args:
-        reply_id (int, optional): The ID of the reply to filter by.
-        text (str, optional): Text to search for within replies.
-        user_id (int, optional): The ID of the user who made the replies.
-        user_name (str, optional): The username of the user who made the replies.
-        topic_id (int, optional): The ID of the topic related to the replies.
-        topic_title (str, optional): The title of the topic related to the replies.
+        reply_id (int, optional): Filter by reply ID.
+        text (str, optional): Filter by text content, supporting partial matches.
+        user_id (int, optional): Filter by user ID.
+        user_name (str, optional): Filter by username.
+        topic_id (int, optional): Filter by topic ID.
+        topic_title (str, optional): Filter by topic title.
         sort_by (str, optional): Column name to sort the results by.
-        sort (str, optional): The sort order; should be either 'ASC' or 'DESC'.
+        sort (str, optional): Sort order, either 'ASC' or 'DESC'.
         start_date (datetime, optional): Filter replies created after this date.
         end_date (datetime, optional): Filter replies created before this date.
-        limit (int, optional): The maximum number of replies to return (default is 10).
-        offset (int, optional): The number of replies to skip before starting to collect the result set (default is 0).
+        limit (int, optional): Limit the number of replies returned. Defaults to 10.
+        offset (int, optional): Offset for pagination. Defaults to 0.
 
     Returns:
-        List[Reply] | Reply: A list of Reply objects if multiple replies match the criteria, 
-                             or a single Reply object if only one matches, or None if no replies are found.
+        List[Reply] | Reply | None: A list of Reply objects if multiple replies are found,
+                                    a single Reply object if only one reply is found,
+                                    or None if no replies match the criteria.
     """
 
     query = '''SELECT reply_id, text, user_id, topic_id, created, edited FROM replies WHERE 1=1'''
@@ -77,30 +76,27 @@ def get_replies(reply_id: int = None, text: str = None, user_id: int = None, use
 
     replies = read_query(query, tuple(params))
 
-    # Return a list of objects if more than one is found, otherwise return a single object
-    if len(replies) > 1:
+    if len(replies) > 1: # If more than one instances are found, return a list of objects
         return [Reply.from_query_result(*obj) for obj in replies]
 
-    else:
+    else: # Otherwise return a single object
         return next((Reply.from_query_result(*row) for row in replies), None)
     
 
-def create(reply: Reply) -> Reply | HTTPException | None:
+def create(reply: Reply) -> Reply | None:
 
     """
-    Creates a new reply in the database.
-    
+    Create a new reply in the database.
+
     Args:
         reply (Reply): The reply object containing the details of the reply to be created.
     
     Returns:
-        Reply: The created reply object with the generated ID.
-        HTTPException: If the topic does not exist or if the same reply is posted more than twice.
-        None: If the reply could not be created.
+        Reply | None: The created reply with its generated ID if the insertion is successful, 
+                      otherwise None.
     
     Raises:
-        NotFoundException: If the topic does not exist.
-        ForbiddenException: If the same reply is posted more than twice.
+        NotFoundException: If the topic associated with the reply does not exist.
     """
 
     topic = read_query('''SELECT topic_id FROM topics WHERE topic_id = ?''', (reply.topic_id,))
@@ -116,28 +112,26 @@ def create(reply: Reply) -> Reply | HTTPException | None:
     return reply if reply else None
 
 
-def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse | HTTPException | None:
+def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse | None:
 
     """
-    Update an existing reply with new information.
+    Edit the text of an existing reply.
     
     Args:
-        old_reply (Reply): The original reply object to be updated.
-        new_reply (Reply): The new reply object containing updated information.
-    
+        old_reply (ReplyResponse): The original reply to be edited.
+        new_reply (ReplyResponse): The new reply containing the updated text.
+
     Returns:
-        Reply: The updated reply object if the update is successful.
-        HTTPException: If the original reply does not exist.
-        None: If the update fails for any other reason.
+        ReplyResponse | None: The merged reply if the update is successful, otherwise None.
     
     Raises:
-        NotFoundException: If the original reply does not exist in the database.
+        NotFoundException: If the old reply does not exist.
     """
-    
+
     if not exists(old_reply.id):
         raise NotFoundException(detail='Reply does not exist')
     
-    if new_reply.text == '':
+    if new_reply.text == '': # If the new text is an empty string, revert to the previous text
     
         new_reply.text = fetch_text(old_reply.id)
 
@@ -150,34 +144,24 @@ def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyRespon
 
 
 def exists(reply_id: int) -> bool:
-
-    """
-    Check if a reply with the given reply_id exists in the database.
-    
-    Args:
-        reply_id (int): The ID of the reply to check.
-    
-    Returns:
-        bool: True if the reply exists, False otherwise.
-    """
      
     reply = read_query('''SELECT reply_id FROM replies WHERE reply_id = ? LIMIT 1''', (reply_id,))
     
     return bool(reply)
 
 
-def delete(reply_id: int) -> str | HTTPException:
-
-    """
-    Deletes a reply from the database based on the given reply_id.
+def delete(reply_id: int) -> str | None:
     
+    """
+    Delete a reply from the database based on the given reply ID.
+
     Args:
         reply_id (int): The ID of the reply to be deleted.
-    
+
     Returns:
-        str: A confirmation message indicating the reply was deleted.
-        HTTPException: An exception if the reply does not exist.
-    
+        str | None: Returns 'reply deleted' if the deletion was successful, 
+                    otherwise returns None.
+
     Raises:
         NotFoundException: If the reply with the given ID does not exist.
     """
@@ -187,7 +171,7 @@ def delete(reply_id: int) -> str | HTTPException:
     
     deleted = update_query('''DELETE FROM replies WHERE reply_id = ?''', (reply_id,))
     
-    return 'reply deleted'
+    return 'reply deleted' if deleted else None
 
 
 def fetch_text(reply_id: int) -> str:

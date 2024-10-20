@@ -8,21 +8,23 @@ from common.exceptions import ConflictException, NotFoundException, BadRequestEx
 def get_categories(category_id: int = None, name: str = None, 
                    sort_by: str = None, sort: str = None,
                    limit: int = 10, offset: int = 0) -> CategoryResponse | List[CategoryResponse] | None:
-
+    
     """
-    Retrieve categories from the database based on optional filters.
+    Retrieve categories from the database with optional filtering, sorting, and pagination.
 
     Args:
-        category_id (int, optional): Filter by category ID
-        name (str, optional): Filter categories by name (partial match)
-        sort_by (str, optional): Column to sort by
-        sort (str, optional): 'ASC' or 'DESC' for sorting order
+        category_id (int, optional): Filter by category ID. Defaults to None.
+        name (str, optional): Filter by category name using a partial match. Defaults to None.
+        sort_by (str, optional): Column name to sort the results by. Defaults to None.
+        sort (str, optional): Sort order ('ASC' or 'DESC'). Defaults to None.
+        limit (int, optional): Maximum number of results to return. Defaults to 10.
+        offset (int, optional): Number of rows to skip before starting to return rows. Defaults to 0.
 
     Returns:
-        CategoryResponse | List[CategoryResponse]: Single or multiple category responses, or None if not found
-        HTTPException: Raised on query execution failure
+        CategoryResponse | List[CategoryResponse] | None: A single CategoryResponse if one result is found,
+        a list of CategoryResponse objects if multiple results are found, or None if no results are found.
     """
-
+   
     query = '''SELECT category_id, name FROM categories'''
     params = []
 
@@ -45,26 +47,26 @@ def get_categories(category_id: int = None, name: str = None,
 
     categories = read_query(query, tuple(params))
 
-
-    # Return a list of objects if more than one are found, otherwise return a single object
-    if len(categories) > 1:
+    if len(categories) > 1: # Return a list of objects if more than one instance is found
         return [CategoryResponse.from_query_result(*obj) for obj in categories]
     
-    else:
+    else: # Otherwise return a single object
         return next((CategoryResponse.from_query_result(*row) for row in categories), None)
     
 
-def create(category: Category) -> Category | HTTPException | None:
-    
+def create(category: Category) -> Category | None:
+
     """
     Create a new category in the database.
-
+    
     Args:
-        category (Category): The category object to be created
-
+        category (Category): The category object to be created. Must contain the name, is_locked, and is_private attributes.
+    
     Returns:
-        Category: The created category object with the assigned ID
-        ConflictException: Raised if a category with the same name already exists
+        Category | None: The created category object with the generated ID, or None if the category could not be created.
+    
+    Raises:
+        ConflictException: If a category with the same name already exists.
     """
 
     if exists(name=category.name):
@@ -80,26 +82,13 @@ def create(category: Category) -> Category | HTTPException | None:
 
 def exists(category_id: int = None, name: str = None) -> bool:
     
-    """
-    Check if a category exists in the database by either category ID or name.
-
-    Args:
-        category_id (int, optional): The ID of the category to check
-        name (str, optional): The name of the category to check
-
-    Returns:
-        bool: True if the category exists, False otherwise
-    """
-    
     category = None
 
-    # If id is provided, query the database for that id
-    if category_id:
+    if category_id: # If an id is provided, check the database for the id
         category = read_query('''SELECT category_id FROM categories WHERE category_id = ?
                             LIMIT 1''', (category_id,))
     
-    # If name is provided, query the database for that name
-    elif name:
+    elif name: # Or if a name is provided, check the database for the name
         category = read_query('''SELECT category_id FROM categories WHERE name = ?
                             LIMIT 1''', (name,))
     
@@ -109,15 +98,14 @@ def exists(category_id: int = None, name: str = None) -> bool:
 def delete(category_id: int, delete_topics: bool = False) ->  str | None:
     
     """
-    Deletes a category and optionally its associated topics and replies.
+    Delete a category and optionally its associated topics and replies.
     
     Args:
         category_id (int): The ID of the category to be deleted.
-        delete_topics (bool, optional): If True, deletes the topics and their replies associated with the category. Defaults to False.
+        delete_topics (bool, optional): If True, deletes topics and replies associated with the category. Defaults to False.
     
     Returns:
-        str: A message indicating what was deleted.
-        None: If the category could not be deleted.
+        str | None: A message indicating what was deleted, or None if the category was not deleted.
     
     Raises:
         NotFoundException: If the category does not exist.
@@ -126,6 +114,7 @@ def delete(category_id: int, delete_topics: bool = False) ->  str | None:
     if not exists(category_id=category_id):
         raise NotFoundException(detail='Category does not exist')
     
+    # Fist delete the category from users_categories_permission table
     update_query('''DELETE FROM users_categories_permissions WHERE category_id = ?''', (category_id,))
 
     topics = has_topics(category_id)
@@ -133,50 +122,46 @@ def delete(category_id: int, delete_topics: bool = False) ->  str | None:
     delete_from_replies = None
     delete_from_topics = None
     
-    if delete_topics == True and topics == True:
+    if delete_topics == True and topics == True: # If delete topics was selected, check if any exist and then delete them
 
-        # First delete the replies of the category's topics 
         delete_from_replies = update_query('''DELETE FROM replies
                         WHERE topic_id IN (SELECT t.topic_id 
                         FROM topics t 
                         WHERE t.category_id = ?)''', (category_id,))
         
-        # Then delete the topics
         delete_from_topics = update_query('''DELETE FROM topics WHERE category_id = ?''', (category_id,))
 
-    #Finally delete the category
+    # Finally delete the category itself
     deleted = update_query('''DELETE FROM categories WHERE category_id = ?''', (category_id,))
 
     if not deleted:
         return None
     
-    elif deleted:
+    else:
 
         if delete_from_replies and delete_from_topics:
             return 'everything deleted' 
     
-    return 'only category deleted'
+        return 'only category deleted'
     
 
-def update_name(old_category: CategoryResponse, new_category: CategoryResponse) -> CategoryResponse | HTTPException | None:
+def update_name(old_category: CategoryResponse, new_category: CategoryResponse) -> CategoryResponse | None:
 
     """
     Update the name of an existing category.
-   
+    
     Args:
-        old_category (CategoryResponse): The current category details, including its name and ID.
+        old_category (CategoryResponse): The current category details, including its name or ID.
         new_category (CategoryResponse): The new category details, including the new name.
     
     Returns:
-        CategoryResponse: The updated category details if the update is successful.
-        None: If the update operation fails.
+        CategoryResponse | None: The updated category details if the update was successful, otherwise None.
     
     Raises:
         NotFoundException: If the old category does not exist.
         ConflictException: If a category with the new name already exists.
-        BadRequestException: If the new name is not provided.
+        BadRequestException: If the new category name is not provided.
     """
-
 
     if not (exists(name=old_category.name) or exists(category_id=old_category.id)):
         raise NotFoundException(detail='Category not found')
@@ -190,12 +175,12 @@ def update_name(old_category: CategoryResponse, new_category: CategoryResponse) 
     query = '''UPDATE categories SET name = ?'''
     params = [new_category.name]
 
-    if old_category.id:
-    
+    if old_category.id: # Check by id if provided
+
         query +=  ''' WHERE category_id = ?'''
         params.append(old_category.id)
     
-    elif old_category.name:
+    elif old_category.name: # Otherwise check by name
 
         query += ''' WHERE name = ?'''
         params.append(old_category.name)
@@ -209,35 +194,12 @@ def update_name(old_category: CategoryResponse, new_category: CategoryResponse) 
 
 def has_topics(category_id: int) -> bool:
 
-    """
-    Checks if a category has any associated topics.
-
-    Args:
-        category_id (int): The ID of the category to check.
-
-    Returns:
-        bool: True if the category has at least one topic, False otherwise.
-    """
-
     topics = read_query('''SELECT topic_id FROM topics WHERE category_id = ? LIMIT 1''', (category_id,))
 
     return bool(topics)
 
 
-def name(category_id: int) -> str:
-
-    """
-    Retrieves the name of a category from the database based on the given category ID.
-
-    Args:
-        category_id (int): The ID of the category whose name is to be retrieved.
-
-    Returns:
-        str: The name of the category.
-
-    Raises:
-        IndexError: If no category with the given ID is found.
-    """
+def get_name(category_id: int) -> str:
 
     name = read_query('''SELECT name FROM categories WHERE category_id = ? LIMIT 1''', (category_id,))
 
@@ -245,37 +207,27 @@ def name(category_id: int) -> str:
 
 
 def get_id(name: str) -> int:
-    """
-    Retrieve the ID of a category based on its name.
-
-    Args:
-        name (str): The name of the category.
-
-    Returns:
-        int: The ID of the category.
-
-    Raises:
-        IndexError: If no category with the given name is found.
-    """
 
     id = read_query('''SELECT category_id FROM categories WHERE name = ? LIMIT 1''', (name,))
 
     return id[0][0]
 
 
-def lock_unlock(category_id: int) -> str | HTTPException | None:
+def lock_unlock(category_id: int) -> str | None:
 
     """
-    Locks or unlocks a category based on its current state.
-
+    Lock or unlock a category based on its current state.
+    
     Args:
-        category_id (int): The ID of the category to be locked or unlocked.
+        category_id (int): The ID of the category to lock or unlock.
     
     Returns:
-        str: A message indicating the result of the operation ('locked', 'unlocked', 'lock failed', 'unlock failed').
-        HTTPException: If the category is not found.
-        None: If the operation does not return any specific result.
-    
+        str | None: A string indicating the result of the operation:
+            - 'unlocked' if the category was successfully unlocked.
+            - 'unlock failed' if the unlock operation failed.
+            - 'locked' if the category was successfully locked.
+            - 'lock failed' if the lock operation failed.
+            - None if the category does not exist.
     Raises:
         NotFoundException: If the category with the given ID does not exist.
     """
@@ -283,7 +235,7 @@ def lock_unlock(category_id: int) -> str | HTTPException | None:
     if not exists(category_id):
         raise NotFoundException(detail='Category not found')
 
-    if is_locked(category_id):
+    if is_locked(category_id): # If the category is already locked, unlock it
 
         unlock_category = update_query('''UPDATE categories SET is_locked = ? WHERE category_id = ?''', (False, category_id))
 
@@ -292,7 +244,7 @@ def lock_unlock(category_id: int) -> str | HTTPException | None:
 
         return 'unlocked'
 
-    else:
+    else: # Otherwise, lock it
         lock_category = update_query('''UPDATE categories SET is_locked = ? WHERE category_id = ?''', (True, category_id))
 
         if not lock_category:
@@ -303,16 +255,6 @@ def lock_unlock(category_id: int) -> str | HTTPException | None:
 
 def is_locked(category_id: int) -> bool:
 
-    """
-    Checks if a category is locked based on its category ID.
-    
-    Args:
-        category_id (int): The ID of the category to check.
-    
-    Returns:
-        bool: True if the category is locked, False otherwise.
-    """
-
     locked_row = read_query('''SELECT is_locked FROM categories WHERE category_id = ?''', (category_id,))
 
     locked_bool = locked_row[0][0]
@@ -322,16 +264,6 @@ def is_locked(category_id: int) -> bool:
 
 def is_private(category_id: int) -> bool:
 
-    """
-    Checks if a category is marked as private.
-    
-    Args:
-        category_id (int): The ID of the category to check.
-    
-    Returns:
-        bool: True if the category is private, False otherwise.
-    """
-
     private_row = read_query('''SELECT is_private FROM categories WHERE category_id = ?''', (category_id,))
 
     private_bool = private_row[0][0]
@@ -339,21 +271,17 @@ def is_private(category_id: int) -> bool:
     return private_bool
 
 
-def privatise_unprivatise(category_id: int) -> str | HTTPException | None:
+def privatise_unprivatise(category_id: int) -> str | None:
 
     """
     Toggles the privacy status of a category based on its current state.
-    If the category is currently private, it will be made public.
-    If the category is currently public, it will be made private.
 
     Args:
         category_id (int): The ID of the category to be toggled.
-
+    
     Returns:
-        str: A message indicating the result of the operation.
-        HTTPException: If the category is not found.
-        None: If the operation is successful but no specific message is returned.
-
+        str | None: A message indicating the result of the operation, or None if the category does not exist.
+    
     Raises:
         NotFoundException: If the category with the given ID does not exist.
     """
@@ -361,7 +289,7 @@ def privatise_unprivatise(category_id: int) -> str | HTTPException | None:
     if not exists(category_id):
         raise NotFoundException(detail='Category not found')
 
-    if is_private(category_id):
+    if is_private(category_id): # If the category is already private, make it public
             
             make_public = update_query('''UPDATE categories SET is_private = ? WHERE category_id = ?''', (False, category_id))
     
@@ -370,7 +298,7 @@ def privatise_unprivatise(category_id: int) -> str | HTTPException | None:
     
             return 'made public'
     
-    else:
+    else: # Otherwise, make it private
     
         make_private = update_query('''UPDATE categories SET is_private = ? WHERE category_id = ?''', (True, category_id))
     
