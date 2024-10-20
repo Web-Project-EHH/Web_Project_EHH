@@ -14,8 +14,8 @@ class Category(BaseModel):
     
 class CategoryResponse(BaseModel):
     
-    id: int
-    name: str
+    id: Optional[int] = None
+    name: Optional[str] = None
 
     @classmethod
     def from_query_result(cls, id, name):

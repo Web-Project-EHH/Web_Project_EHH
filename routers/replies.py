@@ -1,8 +1,9 @@
 from typing import Optional, Literal, List
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from common.exceptions import NotFoundException, BadRequestException
-from data.models.reply import Reply
-from services import replies_services
+from data.models.reply import Reply, ReplyResponse
+from services import replies_services, votes_services
 from datetime import datetime
 
 router = APIRouter(prefix='/replies')
@@ -40,6 +41,42 @@ def create_reply(reply: Reply) -> Reply | HTTPException:
             raise BadRequestException(detail='The reply could not be created')
         
         return reply
+
+@router.post('/{reply_id}/vote', response_model=None)
+def vote(reply_id: int, user_id: int, type: bool):
     
+    vote = votes_services.vote(reply_id=reply_id, user_id=user_id,type=type)
+                                    
+    if not vote:
+        raise BadRequestException('Vote could not be registered')
+    
+    elif vote == 'upvoted':
+        return JSONResponse(content={'message':'You have upvoted'}, status_code=200)
+    
+    elif vote == 'downvoted':
+          return JSONResponse(content={'message':'You have downvoted'}, status_code=200)
+    
+    elif vote == 'vote deleted':
+          return JSONResponse(content={'message':'Vote has been deleted'}, status_code=200)
 
 
+@router.put('/', response_model=None)
+def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse | HTTPException:
+
+	edited = replies_services.edit_text(old_reply, new_reply)
+
+	if not edited:
+		raise BadRequestException(detail='Reply could not be edited')
+
+	return edited
+
+
+@router.delete('/', response_model=None)
+def delete_reply(reply_id: int) -> JSONResponse | HTTPException:
+
+	deleted = replies_services.delete(reply_id)
+
+	if not deleted:
+		raise BadRequestException(detail='Reply could not be deleted')
+
+	return JSONResponse(content={'message':'Reply has been deleted'}, status_code=200)
