@@ -35,6 +35,7 @@ def login_user(data: OAuth2PasswordRequestForm = Depends()):
     access_token = users_services.create_access_token(data={'sub': user.username, 'is_admin': is_admin, "id": id})
     return TokenResponse(access_token=access_token, token_type='bearer')
 
+
 @users_router.get('/me', response_model= UserResponse)
 def get_current_user(user: User = Depends(users_services.get_current_user)):
     return user
@@ -49,9 +50,6 @@ def lougout_user(token: str = Depends(oauth2_scheme)):
     
 
 
-@users_router.get('/admin/{user_id}', response_model= UserResponse)
-def get_admin_user(user_id: int = Depends(users_services.get_current_user)):
-    user = users_services.get_admin_user(user_id)
-    if not user:
-        return Forbidden('User not found')
-    return user
+@users_router.get('/', response_model=list[UserResponse])
+def get_all_users(admin: User = Depends(users_services.get_current_admin_user)):
+    return users_services.get_users()

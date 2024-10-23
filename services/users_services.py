@@ -54,7 +54,7 @@ def get_admin_user(username: str) -> User:
     
 
 def get_user_by_id(user_id: int) -> User:
-    data = read_query('SELECT * FROM users WHERE id=?', (user_id,))
+    data = read_query('SELECT * FROM users WHERE user_id=?', (user_id,))
     if not data:
         return None
     return User.from_query_result(*data[0])
@@ -73,6 +73,16 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         raise Unauthorized("Could not validate credentials")
     return get_user(username)
 
+def get_current_admin_user(user_id: int = Depends(get_current_user)):
+    data = read_query('SELECT * FROM users WHERE user_id=? AND is_admin=1', (user_id,))
+    if not data:
+        raise ForbiddenException('You do not have permission to access this')
+    return User.from_query_result(*data[0])
+
+def get_users():
+    data = read_query('SELECT * FROM users')
+    return [UserResponse.from_query_result(row) for row in data]
+    
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
