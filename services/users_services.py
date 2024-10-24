@@ -4,6 +4,7 @@ from data.database import read_query
 from data.models.vote import Vote
 
 
+
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
     
     """
