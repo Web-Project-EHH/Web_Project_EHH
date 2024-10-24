@@ -32,6 +32,17 @@ def get_replies(reply_id: Optional[int] = Query(default=None),
         raise NotFoundException(detail='No matching replies found')
     
     return replies
+
+
+@router.get('/{id}', response_model=Reply)
+def get_reply_by_id(reply_id: int):
+      
+    reply = replies_services.get_replies(reply_id=reply_id)
+                 
+    if not reply:
+          raise NotFoundException(detail='Reply not found')
+    
+    return reply
     
 
 @router.post('/', response_model=Reply)
