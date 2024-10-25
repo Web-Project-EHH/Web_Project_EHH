@@ -71,11 +71,8 @@ def get_user(username: str) -> UserResponse:
 def get_current_user(token: str = Depends(oauth2_scheme)):
     payload = verify_token(token)
     username = payload.get('sub')
-    is_admin = payload.get('is_admin')
     if not username:
         raise UnauthorizedException('Could not validate credentials')
-    if not is_admin:
-        raise ForbiddenException('You do not have permission to access this')
     return get_user(username)
 
 def get_current_admin_user(user: User = Depends(get_current_user)):
@@ -88,20 +85,6 @@ def get_users():
     data = read_query('SELECT * FROM users')
     return [UserResponse.from_query_result(row) for row in data]
     
-
-# def get_current_user(token: str = Depends(oauth2_scheme)):
-#     payload = verify_token(token)
-#     username = payload.get('sub')
-#     if not username:
-#         raise UnauthorizedException('Could not validate credentials')
-#     return get_user(username)
-
-
-# def get_current_admin_user(user_id: int = Depends(get_current_user)):
-#     data = read_query('SELECT * FROM users WHERE user_id=? AND is_admin=1', (user_id,))
-#     if not data:
-#         raise ForbiddenException('You do not have permission to access this')
-#     return User.from_query_result(*data[0])
 
 
 # def get_user_by_id(user_id: int) -> User:
