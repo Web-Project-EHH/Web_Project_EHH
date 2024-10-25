@@ -27,7 +27,7 @@ def register_user (user: UserLogin):
 
 @users_router.post('/login', response_model= TokenResponse)
 def login_user(data: OAuth2PasswordRequestForm = Depends()):
-    user = users_services.login_user(data.username, data.password)
+    user = users_services.authenticate_user(data.username, data.password)
     is_admin = user.is_admin
     id = user.id
     if not user:
@@ -41,14 +41,12 @@ def get_current_user(user: User = Depends(users_services.get_current_user)):
     return user
 
 
-
 @users_router.post('/logout')
 def lougout_user(token: str = Depends(oauth2_scheme)):
     users_services.verify_token(token)
     users_services.token_blacklist.add(token)
     return 'Logged out successfully'
     
-
 
 @users_router.get('/', response_model=list[UserResponse])
 def get_all_users(admin: User = Depends(users_services.get_current_admin_user)):

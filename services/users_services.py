@@ -2,8 +2,7 @@ from datetime import timedelta, datetime
 from typing import Optional
 from fastapi import Depends
 from jose import JWTError, jwt
-from common.exceptions import ForbiddenException, NotFoundException
-from common.responses import Forbidden, Unauthorized
+from common.exceptions import ForbiddenException, NotFoundException, UnauthorizedException
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from data.models.user import User, UserResponse
 from services import replies_services
@@ -21,68 +20,10 @@ token_blacklist = set()
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
-    
 
-def create_user(user: User) -> int:
-    return insert_query(
-        'INSERT INTO users (username, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
-        (user.username, user.password, user.email, user.first_name, user.last_name)
-    )
-
-
-def login_user(username: str, password: str) -> Optional[UserResponse]:
-    user_data = read_query('SELECT * FROM users WHERE username=?', (username,))
-    
-    if not user_data or not verify_password(password, user_data[0][2]):
-        return None
-    return UserResponse.from_query_result(user_data[0])
-
-
-def get_user(username: str) -> UserResponse:
-    data = read_query( 'SELECT * FROM users WHERE username=?',(username,))
-    if not data:
-        return None
-    return UserResponse.from_query_result(data[0])
-
-def get_admin_user(username: str) -> User:
-    data = read_query('SELECT * FROM users WHERE username=? AND is_admin=1', (username,))
-    if not data:
-        return None
-    return User.from_query_result(*data[0])
-    
-
-def get_user_by_id(user_id: int) -> User:
-    data = read_query('SELECT * FROM users WHERE user_id=?', (user_id,))
-    if not data:
-        return None
-    return User.from_query_result(*data[0])
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get('sub')
-        if username is None:
-            raise username
-        is_admin: bool = payload.get('is_admin')
-        if is_admin is None:
-            raise is_admin
-    except JWTError:
-        raise Unauthorized("Could not validate credentials")
-    return get_user(username)
-
-def get_current_admin_user(user_id: int = Depends(get_current_user)):
-    data = read_query('SELECT * FROM users WHERE user_id=? AND is_admin=1', (user_id,))
-    if not data:
-        raise ForbiddenException('You do not have permission to access this')
-    return User.from_query_result(*data[0])
-
-def get_users():
-    data = read_query('SELECT * FROM users')
-    return [UserResponse.from_query_result(row) for row in data]
-    
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -98,20 +39,59 @@ def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get('sub')
-        is_admin = payload.get('is_admin')
         if username is None:
             raise username
-        if is_admin is None:
-            raise is_admin
+        return payload
     except JWTError:
-            raise Unauthorized("Could not validate credentials")
+            raise UnauthorizedException("Could not validate credentials")
+
+    
+def create_user(user: User) -> int:
+    return insert_query(
+        'INSERT INTO users (username, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
+        (user.username, user.password, user.email, user.first_name, user.last_name)
+    )
 
 
-def authenticate_user(username: str, password: str):
-    user = login_user(username, password)
-    if not user or not verify_password(password, user.password):
+def authenticate_user(username: str, password: str) -> Optional[UserResponse]:
+    user_data = read_query('SELECT * FROM users WHERE username=?', (username,))
+    
+    if not user_data or not verify_password(password, user_data[0][2]):
         return None
-    return user
+    return UserResponse.from_query_result(user_data[0])
+
+
+def get_user(username: str) -> UserResponse:
+    data = read_query( 'SELECT * FROM users WHERE username=?',(username,))
+    if not data:
+        return None
+    return UserResponse.from_query_result(data[0])
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = verify_token(token)
+    username = payload.get('sub')
+    return get_user(username)
+
+
+def get_current_admin_user(user_id: int = Depends(get_current_user)):
+    data = read_query('SELECT * FROM users WHERE user_id=? AND is_admin=1', (user_id,))
+    if not data:
+        raise ForbiddenException('You do not have permission to access this')
+    return User.from_query_result(*data[0])
+
+
+def get_users():
+    data = read_query('SELECT * FROM users')
+    return [UserResponse.from_query_result(row) for row in data]
+    
+
+# def get_user_by_id(user_id: int) -> User:
+#     data = read_query('SELECT * FROM users WHERE user_id=?', (user_id,))
+#     if not data:
+#         return None
+#     return User.from_query_result(*data[0])
+
 
 
 
