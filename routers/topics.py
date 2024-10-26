@@ -6,7 +6,7 @@ from typing import Optional, Literal
 from data.models.topic import Topic, TopicCreate, TopicUpdate, TopicResponse
 from services.topics_services import exists
 
-topics_router = APIRouter(prefix='/topics',tags=['topics'])
+topics_router = APIRouter(prefix='/topics',tags=['Topics'])
 
 @topics_router.get('/')
 def get_all_topics(

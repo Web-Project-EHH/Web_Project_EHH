@@ -37,6 +37,9 @@ def verify_token(token: str):
     if token in token_blacklist:
         raise ForbiddenException("Token has been revoked")
     
+    if not token:
+        raise ForbiddenException("Token is missing or invalid")
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get('sub')

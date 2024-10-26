@@ -1,8 +1,12 @@
 from datetime import datetime
+
+from fastapi import Depends
 from data.database import read_query, insert_query, update_query
 from data.models.reply import Reply, ReplyResponse
 from typing import List
-from common.exceptions import NotFoundException
+from common.exceptions import ForbiddenException, NotFoundException
+from data.models.user import User
+from services import users_services
 
 def get_replies(reply_id: int = None, text: str = None, user_id: int = None, user_name: str = None,
                 topic_id: int = None, topic_title: str = None, sort_by: str = None, sort: str = None,
@@ -83,7 +87,7 @@ def get_replies(reply_id: int = None, text: str = None, user_id: int = None, use
         return next((Reply.from_query_result(*row) for row in replies), None)
     
 
-def create(reply: Reply) -> Reply | None:
+def create(reply: Reply, current_user: User) -> Reply | None:
 
     """
     Create a new reply in the database.
@@ -104,6 +108,8 @@ def create(reply: Reply) -> Reply | None:
     if not topic:
         raise NotFoundException(detail='Topic does not exist')
     
+    reply.user_id = current_user.id
+    
     generated_id = insert_query('''INSERT INTO replies (text, user_id, topic_id, created, edited) VALUES (?, ?, ?, ?, ?)''',
                                 (reply.text, reply.user_id, reply.topic_id, reply.created, reply.edited))
     
@@ -112,7 +118,7 @@ def create(reply: Reply) -> Reply | None:
     return reply if reply else None
 
 
-def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse | None:
+def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse, current_user: User) -> ReplyResponse | None:
 
     """
     Edit the text of an existing reply.
@@ -127,6 +133,16 @@ def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyRespon
     Raises:
         NotFoundException: If the old reply does not exist.
     """
+
+    if not exists(old_reply.id):
+        raise NotFoundException(detail='Reply does not exist')
+    
+    reply_username = read_query('''SELECT u.username from users u
+                                JOIN replies r on r.user_id = u.user_id
+                                WHERE r.reply_id = ?''', (old_reply.id,))
+
+    if current_user.username != reply_username[0][0]:
+        raise ForbiddenException(detail='You are not allowed to edit this reply')
 
     if not exists(old_reply.id):
         raise NotFoundException(detail='Reply does not exist')
@@ -150,8 +166,8 @@ def exists(reply_id: int) -> bool:
     return bool(reply)
 
 
-def delete(reply_id: int) -> str | None:
-    
+def delete(reply_id: int, current_user: User) -> str | None:
+
     """
     Delete a reply from the database based on the given reply ID.
 
@@ -168,6 +184,14 @@ def delete(reply_id: int) -> str | None:
 
     if not exists(reply_id):
         raise NotFoundException(detail='Reply not found')
+
+    reply_username = read_query('''SELECT u.username from users u
+                                JOIN replies r on r.user_id = u.user_id
+                                WHERE r.reply_id = ?''', (reply_id,))
+
+    if not current_user.is_admin:
+        if current_user.username != reply_username[0][0]:
+            raise ForbiddenException(detail='You are not allowed to delete this reply')
     
     deleted = update_query('''DELETE FROM replies WHERE reply_id = ?''', (reply_id,))
     

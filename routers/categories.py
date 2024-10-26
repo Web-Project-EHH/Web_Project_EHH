@@ -1,7 +1,8 @@
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from services import categories_services
-from fastapi import APIRouter, HTTPException
+from data.models.user import User
+from services import categories_services, users_services
+from fastapi import APIRouter, Depends, HTTPException
 from common.exceptions import ConflictException, NotFoundException, BadRequestException, ForbiddenException
 from data.models.category import Category, CategoryResponse
 from typing import List
@@ -42,7 +43,7 @@ def get_category_by_id(category_id: int) -> CategoryResponse:
 
 
 @router.post('/', response_model=None)
-def create_category(category: Category) -> Category:
+def create_category(category: Category, admin: User = Depends(users_services.get_current_admin_user)) -> Category:
 
 
     new_category = categories_services.create(category)
@@ -54,7 +55,8 @@ def create_category(category: Category) -> Category:
 
 
 @router.put('/', response_model=None)
-def update_category_name(old_category:CategoryResponse, new_category: CategoryResponse) -> CategoryResponse:
+def update_category_name(old_category:CategoryResponse, new_category: CategoryResponse, 
+                         admin: User = Depends(users_services.get_current_admin_user)) -> CategoryResponse:
     
     updated = categories_services.update_name(old_category, new_category)
 
@@ -65,7 +67,7 @@ def update_category_name(old_category:CategoryResponse, new_category: CategoryRe
 
 
 @router.put('/{category_id}/lock', response_model=None)
-def lock_unlock_category(category_id: int) -> JSONResponse:
+def lock_unlock_category(category_id: int, admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
 
     result = categories_services.lock_unlock(category_id)
 
@@ -86,7 +88,7 @@ def lock_unlock_category(category_id: int) -> JSONResponse:
     
 
 @router.put('/{category_id}/make_private', response_model=None)
-def make_category_private(category_id: int) -> JSONResponse:
+def make_category_private(category_id: int, admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
 
     result = categories_services.privatise_unprivatise(category_id)
 
@@ -107,7 +109,8 @@ def make_category_private(category_id: int) -> JSONResponse:
 
 
 @router.delete('/', response_model=None)
-def delete_category(category_id: int = Query(int), delete_topics: bool = Query(False)) -> JSONResponse:
+def delete_category(category_id: int = Query(int), delete_topics: bool = Query(False),
+                    admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
 
     try:
         
