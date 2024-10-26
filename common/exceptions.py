@@ -15,3 +15,7 @@ class ForbiddenException(HTTPException):
 class BadRequestException(HTTPException):
     def __init__(self, detail, status_code: int = 400):
         super().__init__(status_code=status_code, detail=detail)
+
+class UnauthorizedException(HTTPException):
+    def __init__(self, detail, status_code: int = 401):
+        super().__init__(status_code=status_code, detail=detail)     
