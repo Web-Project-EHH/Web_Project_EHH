@@ -5,8 +5,9 @@ from jose import JWTError, jwt
 from common.exceptions import ForbiddenException, NotFoundException, UnauthorizedException
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from data.models.user import User, UserResponse
+from common.exceptions import NotFoundException
 from services import replies_services
-from data.database import insert_query, read_query
+from data.database import read_query
 from data.models.vote import Vote
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
@@ -92,9 +93,6 @@ def get_users():
 #     if not data:
 #         return None
 #     return User.from_query_result(*data[0])
-
-
-
 
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
     
