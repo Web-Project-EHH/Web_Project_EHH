@@ -10,7 +10,7 @@ from typing import Literal, Optional
 from mariadb import IntegrityError
 
 
-router = APIRouter(prefix='/categories')
+router = APIRouter(prefix='/categories', tags=['Categories'])
 
 
 @router.get('/', response_model=None)
@@ -85,8 +85,8 @@ def lock_unlock_category(category_id: int) -> JSONResponse:
         raise BadRequestException(detail='Category could not be unlocked')
     
 
-@router.put('/{category_id}/privatise', response_model=None)
-def privatise_category(category_id: int) -> JSONResponse:
+@router.put('/{category_id}/make_private', response_model=None)
+def make_category_private(category_id: int) -> JSONResponse:
 
     result = categories_services.privatise_unprivatise(category_id)
 
