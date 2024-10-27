@@ -121,10 +121,10 @@ def delete_category(category_id: int = Query(int), delete_topics: bool = Query(F
             raise BadRequestException(detail='Category could not be deleted')
 
         elif result == 'everything deleted':
-            return JSONResponse(content={'message': 'Category and its topics have been deleted'}, status_code=200)
+            return JSONResponse(content={'message': 'Category and its topics deleted'}, status_code=200)
         
         elif result == 'only category deleted':
-            return JSONResponse(content={'message': 'Category has been deleted'}, status_code=200)
+            return JSONResponse(content={'message': 'Category deleted'}, status_code=200)
 
     except IntegrityError:
         raise ForbiddenException(detail='Cannot delete a category that includes topics.')

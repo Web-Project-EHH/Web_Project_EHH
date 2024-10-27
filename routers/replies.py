@@ -52,7 +52,7 @@ def create_reply(reply: Reply, current_user: User = Depends(users_services.get_c
         reply = replies_services.create(reply, current_user)
 
         if not reply:
-            raise BadRequestException(detail='The reply could not be created')
+            raise BadRequestException(detail='Reply could not be created')
         
         return reply
 
@@ -94,4 +94,4 @@ def delete_reply(reply_id: int, current_user: User=Depends(users_services.get_cu
     if not deleted:
         raise BadRequestException(detail='Reply could not be deleted')
     
-    return JSONResponse(content={'message':'Reply has been deleted'}, status_code=200)
+    return JSONResponse(content={'message':'Reply deleted'}, status_code=200)
