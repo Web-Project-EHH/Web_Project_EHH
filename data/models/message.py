@@ -16,5 +16,5 @@ class Message(BaseModel):
             receiver_id=receiver_id
             )
 
-    class MessageText(BaseModel):
-        text: str = Field(..., min_length=1)
+class MessageText(BaseModel):
+    text: str = Field(..., min_length=1)
