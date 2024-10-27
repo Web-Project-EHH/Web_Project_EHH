@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from typing import Optional
+from typing import Annotated, Optional
 from fastapi import Depends
 from jose import JWTError, jwt
 from common.exceptions import ForbiddenException, NotFoundException, UnauthorizedException
@@ -91,11 +91,11 @@ def get_users():
     
 
 
-# def get_user_by_id(user_id: int) -> User:
-#     data = read_query('SELECT * FROM users WHERE user_id=?', (user_id,))
-#     if not data:
-#         return None
-#     return User.from_query_result(*data[0])
+def get_user_by_id(user_id: int) -> User:
+    data = read_query('''SELECT * FROM users WHERE user_id=?''', (user_id,))
+    if not data:
+        raise NotFoundException(detail='User does not exist')
+    return User.from_query_result(data[0])
 
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
     
@@ -129,3 +129,5 @@ def exists(user_id: int) -> bool:
     user = read_query('''SELECT user_id FROM users WHERE user_id = ?''', (user_id,))
 
     return bool(user)
+
+UserAuthDep =  Annotated[User, Depends(get_current_user)]
