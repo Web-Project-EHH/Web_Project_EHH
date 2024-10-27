@@ -53,3 +53,23 @@ class TopicUpdate(BaseModel):
     title: ValidTitle | None = None
     best_reply_id: PositiveInt
 
+
+class TopicCategoryResponse(BaseModel):
+
+    topic_id: int
+    title: str
+    user_id: int
+    is_locked: bool
+    best_reply_id: int | None = None
+    category_id: int
+
+    @classmethod
+    def from_query(cls, topic_id, title, user_id, is_locked, best_reply_id, category_id):
+        return cls(
+            topic_id=topic_id,
+            title=title,
+            user_id=user_id,
+            is_locked=is_locked,
+            best_reply_id=best_reply_id,
+            category_id=category_id,
+        )

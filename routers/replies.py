@@ -57,9 +57,9 @@ def create_reply(reply: Reply, current_user: User = Depends(users_services.get_c
         return reply
 
 @router.post('/{reply_id}/vote', response_model=None)
-def vote(reply_id: int, user_id: int, type: bool) -> JSONResponse:
+def vote(reply_id: int, type: bool, current_user: User=Depends(users_services.get_current_user)) -> JSONResponse:
     
-    vote = votes_services.vote(reply_id=reply_id, user_id=user_id,type=type)
+    vote = votes_services.vote(reply_id=reply_id, type=type, current_user=current_user)
                                     
     if not vote:
         raise BadRequestException('Vote could not be registered')
@@ -71,7 +71,7 @@ def vote(reply_id: int, user_id: int, type: bool) -> JSONResponse:
           return JSONResponse(content={'message':'You have downvoted'}, status_code=200)
     
     elif vote == 'vote deleted':
-          return JSONResponse(content={'message':'Vote has been deleted'}, status_code=200)
+          return JSONResponse(content={'message':'Your vote has been deleted'}, status_code=200)
 
 
 @router.put('/', response_model=None)

@@ -31,10 +31,10 @@ def get_categories(category_id: Optional[int] = Query(default=None),
     return categories
 
 
-@router.get('/{id}', response_model=CategoryResponse)
-def get_category_by_id(category_id: int) -> CategoryResponse:
+@router.get('/{id}', response_model=None)
+def get_category_by_id(category_id: int):
 
-    category = categories_services.get_categories(category_id=category_id)
+    category = categories_services.get_by_id(category_id=category_id)
 
     if not category:
         raise NotFoundException(detail='Category not found')

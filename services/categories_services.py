@@ -3,6 +3,7 @@ from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryResponse
 from typing import List
 from common.exceptions import ConflictException, NotFoundException, BadRequestException
+from data.models.topic import Topic, TopicCategoryResponse
 
 
 def get_categories(category_id: int = None, name: str = None, 
@@ -306,3 +307,18 @@ def privatise_unprivatise(category_id: int) -> str | None:
             return 'made private failed'
         
         return 'made private'
+    
+
+def get_by_id(category_id: int):
+
+    if not exists(category_id):
+        raise NotFoundException(detail='Category does not exist')
+    
+    category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
+                          WHERE category_id = ?''', (category_id,))
+    
+    topics = read_query('''SELECT topic_id, title, user_id, is_locked, best_reply_id, category_id FROM topics
+                        WHERE category_id = ?''', (category_id,))
+    
+    return {'Category': Category.from_query_result(*category[0]), 
+            'Topics': [TopicCategoryResponse.from_query(*obj) for obj in topics] if topics else 'No topics'}

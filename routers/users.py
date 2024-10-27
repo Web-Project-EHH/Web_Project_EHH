@@ -28,10 +28,10 @@ def register_user (user: UserLogin):
 @users_router.post('/login', response_model= TokenResponse)
 def login_user(data: OAuth2PasswordRequestForm = Depends()):
     user = users_services.authenticate_user(data.username, data.password)
-    is_admin = user.is_admin
-    id = user.id
     if not user:
         return BadRequest('Invalid username or password')
+    is_admin = user.is_admin
+    id = user.id
     access_token = users_services.create_access_token(data={'sub': user.username, 'is_admin': is_admin, "id": id})
     return TokenResponse(access_token=access_token, token_type='bearer')
 
@@ -42,7 +42,7 @@ def get_current_user(user: User = Depends(users_services.get_current_user)):
 
 
 @users_router.post('/logout')
-def lougout_user(token: str = Depends(oauth2_scheme)):
+def logout_user(token: str = Depends(oauth2_scheme)):
     users_services.verify_token(token)
     users_services.token_blacklist.add(token)
     return 'Logged out successfully'
