@@ -55,7 +55,7 @@ def create_category(category: Category, admin: User = Depends(users_services.get
     return new_category
 
 
-@router.put('/', response_model=None)
+@router.patch('/', response_model=None)
 def update_category_name(old_category:CategoryResponse, new_category: CategoryResponse, 
                          admin: User = Depends(users_services.get_current_admin_user)) -> CategoryResponse:
     
@@ -67,7 +67,7 @@ def update_category_name(old_category:CategoryResponse, new_category: CategoryRe
     return updated
 
 
-@router.put('/{category_id}/lock', response_model=None)
+@router.patch('/{category_id}/lock', response_model=None)
 def lock_unlock_category(category_id: int, admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
 
     result = categories_services.lock_unlock(category_id)
@@ -88,7 +88,7 @@ def lock_unlock_category(category_id: int, admin: User = Depends(users_services.
         raise BadRequestException(detail='Category could not be unlocked')
     
 
-@router.put('/{category_id}/make_private', response_model=None)
+@router.patch('/{category_id}/make_private', response_model=None)
 def make_category_private(category_id: int, admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
 
     result = categories_services.privatise_unprivatise(category_id)
