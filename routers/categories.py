@@ -20,10 +20,11 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    sort_by: Literal["name", "category_id"] | None = Query(default=None), 
                    sort: Literal["asc", "desc",] | None = Query(default=None),
                    limit: int = Query(default=10, ge=1),
-                   offset: int = Query(default=0, ge=0)) -> List[CategoryResponse] | CategoryResponse:
+                   offset: int = Query(default=0, ge=0),
+                   current_user: User = Depends(users_services.get_current_user)) -> List[CategoryResponse] | CategoryResponse:
 
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
-                                                        limit=limit, offset=offset)
+                                                        limit=limit, offset=offset, current_user=current_user)
     
     if not categories:
         raise NotFoundException(detail="No matching categories found")
@@ -32,9 +33,9 @@ def get_categories(category_id: Optional[int] = Query(default=None),
 
 
 @router.get('/{id}', response_model=None)
-def get_category_by_id(category_id: int):
+def get_category_by_id(category_id: int, current_user: User=Depends(users_services.get_current_user)):
 
-    category = categories_services.get_by_id(category_id=category_id)
+    category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 
     if not category:
         raise NotFoundException(detail='Category not found')

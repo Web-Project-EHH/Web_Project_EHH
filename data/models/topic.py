@@ -54,7 +54,25 @@ class TopicUpdate(BaseModel):
     best_reply_id: PositiveInt
 
 
-class TopicCategoryResponse(BaseModel):
+class TopicCategoryResponseUser(BaseModel):
+
+    topic_id: int
+    title: str
+    user_id: int
+    best_reply_id: int | None = None
+    category_id: int
+
+    @classmethod
+    def from_query(cls, topic_id, title, user_id, best_reply_id, category_id):
+        return cls(
+            topic_id=topic_id,
+            title=title,
+            user_id=user_id,
+            best_reply_id=best_reply_id,
+            category_id=category_id,
+        )
+
+class TopicCategoryResponseAdmin(BaseModel):
 
     topic_id: int
     title: str
