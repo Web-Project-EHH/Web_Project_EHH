@@ -74,7 +74,7 @@ def vote(reply_id: int, type: bool, current_user: User=Depends(users_services.ge
           return JSONResponse(content={'message':'Your vote has been deleted'}, status_code=200)
 
 
-@router.put('/', response_model=None)
+@router.patch('/', response_model=None)
 def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse, 
                current_user: User=Depends(users_services.get_current_user)) -> ReplyResponse:
 

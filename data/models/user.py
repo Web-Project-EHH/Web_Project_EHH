@@ -78,6 +78,6 @@ class UserInfo(BaseModel):
             last_name=last_name
         )
 
-class AnonymousUser(BaseModel):
-    raise NotImplementedError
+# class AnonymousUser(BaseModel):
+#     raise NotImplementedError
 # DA OBSDUIM DALI SHTE GO POLZVAME
