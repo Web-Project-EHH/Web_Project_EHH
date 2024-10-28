@@ -143,9 +143,6 @@ def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse, current_user: 
 
     if current_user.username != reply_username[0][0]:
         raise ForbiddenException(detail='You are not allowed to edit this reply')
-
-    if not exists(old_reply.id):
-        raise NotFoundException(detail='Reply does not exist')
     
     if new_reply.text == '': # If the new text is an empty string, revert to the previous text
     
