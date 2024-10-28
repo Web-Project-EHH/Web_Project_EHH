@@ -4,8 +4,6 @@ from common.exceptions import ConflictException, NotFoundException
 from data.models.category import Category, CategoryResponse
 from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
 from test_models import mock_category, mock_user
-from unittest import mock
-from data.database import read_query
 from unittest.mock import patch
 from services import categories_services
 
@@ -129,7 +127,6 @@ class TestCategoryServices(TestCase):
         result = categories_services.update_name(self.testcategory1, self.testcategory2)
         expected = CategoryResponse(id=1, name='Clothes')
         self.assertEqual(result, expected)
-
 
     @patch('services.categories_services.has_topics', autospec=True)
     def testHasTopics_CategoryHasTopics_ReturnsTrue(self, mock_has_topics):
