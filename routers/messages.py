@@ -9,7 +9,7 @@ from services.users_services import UserAuthDep
 messages_router = APIRouter(prefix='/messages', tags=['messages'])
 
 
-@messages_router.post('/{receiver_id}', response_model=responses.MessageResponse, status_code=201)
+@messages_router.post('/{receiver_id}', status_code=201)
 def send_message(receiver_id: int, message: MessageText, current_user: UserAuthDep):
     if not message.text:
         raise HTTPException(status_code=400, detail='Message cannot be empty')
