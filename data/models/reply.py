@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 class Reply(BaseModel):
 
     id: Optional[int] = None
-    text: str = Field(..., min_length=2)
+    text: str = Field(..., min_length=1)
     user_id: int
     topic_id: int
     created: datetime = Field(default_factory=datetime.now)

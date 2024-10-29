@@ -3,11 +3,14 @@ from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryResponse
 from typing import List
 from common.exceptions import ConflictException, NotFoundException, BadRequestException
+from data.models.topic import Topic, TopicCategoryResponseUser, TopicCategoryResponseAdmin, TopicCategoryResponseUser
+from data.models.user import User
 
 
-def get_categories(category_id: int = None, name: str = None, 
+def get_categories(current_user: User, 
+                   category_id: int = None, name: str = None, 
                    sort_by: str = None, sort: str = None,
-                   limit: int = 10, offset: int = 0) -> CategoryResponse | List[CategoryResponse] | None:
+                   limit: int = 10, offset: int = 0,) -> CategoryResponse | List[CategoryResponse] | None:
     
     """
     Retrieve categories from the database with optional filtering, sorting, and pagination.
@@ -25,15 +28,19 @@ def get_categories(category_id: int = None, name: str = None,
         a list of CategoryResponse objects if multiple results are found, or None if no results are found.
     """
    
-    query = '''SELECT category_id, name FROM categories'''
+    query = '''SELECT category_id, name FROM categories WHERE 1=1'''
     params = []
 
     if category_id:
-        query += ''' WHERE category_id = ?'''
+        query += ''' AND category_id = ?'''
         params.append(category_id)
 
+    if not current_user.is_admin:
+        query += ''' AND is_private = ?''' 
+        params.append(0)
+
     if name:
-        query += ''' AND name LIKE ?''' if category_id else ''' WHERE name LIKE ?'''
+        query += ''' AND name LIKE ?'''
         params.append(f'%{name}%')
 
     if sort_by:
@@ -46,6 +53,7 @@ def get_categories(category_id: int = None, name: str = None,
     params.extend([limit, offset])
 
     categories = read_query(query, tuple(params))
+
 
     if len(categories) > 1: # Return a list of objects if more than one instance is found
         return [CategoryResponse.from_query_result(*obj) for obj in categories]
@@ -306,3 +314,32 @@ def privatise_unprivatise(category_id: int) -> str | None:
             return 'made private failed'
         
         return 'made private'
+    
+
+def get_by_id(category_id: int, current_user: User):
+
+    if not exists(category_id):
+        raise NotFoundException(detail='Category does not exist')
+    
+    if current_user.is_admin:
+        
+        category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
+                          WHERE category_id = ?''', (category_id,))
+    
+        topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
+                        WHERE category_id = ?''', (category_id,))
+        
+        return {'Category': Category.from_query_result(*category[0] if category else 'No categories'), 
+            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else 'No topics'}
+        
+    else:
+        category = read_query('''SELECT category_id, name FROM categories
+                          WHERE is_private = 0 AND category_id = ?''', (category_id,))
+        
+        if category:
+        
+            topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
+                        WHERE is_locked = 0 AND category_id = ?''', (category_id,))
+    
+            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else 'No categories', 
+                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else 'No topics'}

@@ -33,6 +33,7 @@ def login_user(data: OAuth2PasswordRequestForm = Depends()):
     if not user:
         return BadRequest('Invalid username or password')
     access_token = auth.create_access_token(data={'sub': user.username, 'is_admin': is_admin, "id": id})
+
     return TokenResponse(access_token=access_token, token_type='bearer')
 
 
