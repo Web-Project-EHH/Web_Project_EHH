@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import Depends
 from data.database import read_query, insert_query, update_query
-from data.models.reply import Reply, ReplyResponse
+from data.models.reply import Reply, ReplyCreate, ReplyResponse
 from typing import List
 from common.exceptions import ForbiddenException, NotFoundException
 from data.models.user import User
@@ -87,7 +87,7 @@ def get_replies(reply_id: int = None, text: str = None, user_id: int = None, use
         return next((Reply.from_query_result(*row) for row in replies), None)
     
 
-def create(reply: Reply, current_user: User) -> Reply | None:
+def create(reply: ReplyCreate, current_user: User) -> Reply | None:
 
     """
     Create a new reply in the database.
@@ -108,14 +108,12 @@ def create(reply: Reply, current_user: User) -> Reply | None:
     if not topic:
         raise NotFoundException(detail='Topic does not exist')
     
-    reply.user_id = current_user.id
+    user_id = current_user.id
     
-    generated_id = insert_query('''INSERT INTO replies (text, user_id, topic_id, created, edited) VALUES (?, ?, ?, ?, ?)''',
-                                (reply.text, reply.user_id, reply.topic_id, reply.created, reply.edited))
-    
-    reply.id = generated_id
+    generated_id = insert_query('''INSERT INTO replies (text, user_id, topic_id) VALUES (?, ?, ?)''',
+                                (reply.text, user_id, reply.topic_id))
 
-    return reply if reply else None
+    return Reply(id=generated_id, text=reply.text, user_id=user_id, topic_id=reply.topic_id) if generated_id else None
 
 
 def edit_text(old_reply: ReplyResponse, new_reply: ReplyResponse, current_user: User) -> ReplyResponse | None:

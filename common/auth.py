@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Annotated, Optional
 from fastapi import Depends
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -35,6 +35,9 @@ def verify_token(token: str):
     if token in token_blacklist:
         raise ForbiddenException("Token has been revoked")
     
+    if not token:
+        raise UnauthorizedException("Could not validate credentials")
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get('sub')
@@ -65,3 +68,5 @@ def get_current_admin_user(user: User = Depends(get_current_user)):
     if not user.is_admin:
         raise ForbiddenException('You do not have permission to access this')
     return user
+
+UserAuthDep =  Annotated[User, Depends(get_current_user)]
