@@ -1,10 +1,11 @@
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+import common.auth
 from data.models.user import User
 from services import categories_services, users_services
 from fastapi import APIRouter, Depends, HTTPException
 from common.exceptions import ConflictException, NotFoundException, BadRequestException, ForbiddenException
-from data.models.category import Category, CategoryResponse
+from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
 from fastapi import Query
 from typing import Literal, Optional
@@ -21,7 +22,7 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    sort: Literal["asc", "desc",] | None = Query(default=None),
                    limit: int = Query(default=10, ge=1),
                    offset: int = Query(default=0, ge=0),
-                   current_user: User = Depends(users_services.get_current_user)) -> List[CategoryResponse] | CategoryResponse:
+                   current_user: User = Depends(common.auth.get_current_user)) -> List[CategoryResponse] | CategoryResponse:
 
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
@@ -33,7 +34,7 @@ def get_categories(category_id: Optional[int] = Query(default=None),
 
 
 @router.get('/{id}', response_model=None)
-def get_category_by_id(category_id: int, current_user: User=Depends(users_services.get_current_user)):
+def get_category_by_id(category_id: int, current_user: User=Depends(common.auth.get_current_user)):
 
     category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 
@@ -44,7 +45,7 @@ def get_category_by_id(category_id: int, current_user: User=Depends(users_servic
 
 
 @router.post('/', response_model=None)
-def create_category(category: Category, admin: User = Depends(users_services.get_current_admin_user)) -> Category:
+def create_category(category: CategoryCreate, admin: User = Depends(common.auth.get_current_admin_user)) -> Category:
 
 
     new_category = categories_services.create(category)
@@ -56,8 +57,8 @@ def create_category(category: Category, admin: User = Depends(users_services.get
 
 
 @router.patch('/', response_model=None)
-def update_category_name(old_category:CategoryResponse, new_category: CategoryResponse, 
-                         admin: User = Depends(users_services.get_current_admin_user)) -> CategoryResponse:
+def update_category_name(old_category:CategoryChangeNameID, new_category: CategoryChangeName, 
+                         admin: User = Depends(common.auth.get_current_admin_user)) -> CategoryResponse:
     
     updated = categories_services.update_name(old_category, new_category)
 
@@ -68,7 +69,7 @@ def update_category_name(old_category:CategoryResponse, new_category: CategoryRe
 
 
 @router.patch('/{category_id}/lock', response_model=None)
-def lock_unlock_category(category_id: int, admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
+def lock_unlock_category(category_id: int, admin: User = Depends(common.auth.get_current_admin_user)) -> JSONResponse:
 
     result = categories_services.lock_unlock(category_id)
 
@@ -89,7 +90,7 @@ def lock_unlock_category(category_id: int, admin: User = Depends(users_services.
     
 
 @router.patch('/{category_id}/make_private', response_model=None)
-def make_category_private(category_id: int, admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
+def make_category_private(category_id: int, admin: User = Depends(common.auth.get_current_admin_user)) -> JSONResponse:
 
     result = categories_services.privatise_unprivatise(category_id)
 
@@ -111,7 +112,7 @@ def make_category_private(category_id: int, admin: User = Depends(users_services
 
 @router.delete('/', response_model=None)
 def delete_category(category_id: int = Query(int), delete_topics: bool = Query(False),
-                    admin: User = Depends(users_services.get_current_admin_user)) -> JSONResponse:
+                    admin: User = Depends(common.auth.get_current_admin_user)) -> JSONResponse:
 
     try:
         
