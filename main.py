@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 # from routers.admin import router as admin_router
 from routers.api.users import users_router
 from routers.api.categories import router as categories_router
@@ -15,6 +16,7 @@ from routers.web.home import router as home_router
 from routers.web.login import router as login_router
 from routers.web.logout import router as logout_router
 from routers.web.register import router as register_router
+
 
 import uvicorn
 
@@ -35,6 +37,7 @@ app.include_router(web_replies_router)
 app.include_router(login_router)
 app.include_router(logout_router)
 app.include_router(register_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
