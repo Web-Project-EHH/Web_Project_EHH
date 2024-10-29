@@ -131,3 +131,14 @@ def exists(user_id: int) -> bool:
     return bool(user)
 
 UserAuthDep =  Annotated[User, Depends(get_current_user)]
+
+def hash_existing_user_passwords():
+    users = read_query('SELECT user_id, password FROM users')
+    
+    for user_id, plain_password in users:
+        if len(plain_password) != 60:
+            hashed_password = get_password_hash(plain_password)
+            
+            insert_query('UPDATE users SET password = ? WHERE user_id = ?', (hashed_password, user_id))
+    
+    print("All user passwords have been hashed successfully.")
