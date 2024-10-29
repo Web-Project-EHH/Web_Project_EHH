@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from data.models.message import MessageText
 from services import messages_services, users_services
-from services.users_services import UserAuthDep
+from common.auth import UserAuthDep
 from data.database import read_query
 
 #DA OPRAVQ EXCEPTIONITE  !
