@@ -1,10 +1,12 @@
 from typing import Optional, Literal, List
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from common.exceptions import NotFoundException, BadRequestException
-from data.models.reply import Reply, ReplyResponse
-from services import replies_services, votes_services
+from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID, ReplyResponse
+from data.models.user import User
+from services import replies_services, votes_services, users_services
 from datetime import datetime
+import common.auth
 
 
 router = APIRouter(prefix='/replies', tags=['Replies'])
@@ -46,19 +48,19 @@ def get_reply_by_id(reply_id: int):
     
 
 @router.post('/', response_model=Reply)
-def create_reply(reply: Reply) -> Reply:
+def create_reply(reply: ReplyCreate, current_user: User = Depends(common.auth.get_current_user)) -> Reply:
 
-        reply = replies_services.create(reply)
+        reply = replies_services.create(reply, current_user)
 
         if not reply:
-            raise BadRequestException(detail='The reply could not be created')
+            raise BadRequestException(detail='Reply could not be created')
         
         return reply
 
 @router.post('/{reply_id}/vote', response_model=None)
-def vote(reply_id: int, user_id: int, type: bool) -> JSONResponse:
+def vote(reply_id: int, type: bool, current_user: User=Depends(common.auth.get_current_user)) -> JSONResponse:
     
-    vote = votes_services.vote(reply_id=reply_id, user_id=user_id,type=type)
+    vote = votes_services.vote(reply_id=reply_id, type=type, current_user=current_user)
                                     
     if not vote:
         raise BadRequestException('Vote could not be registered')
@@ -70,13 +72,14 @@ def vote(reply_id: int, user_id: int, type: bool) -> JSONResponse:
           return JSONResponse(content={'message':'You have downvoted'}, status_code=200)
     
     elif vote == 'vote deleted':
-          return JSONResponse(content={'message':'Vote has been deleted'}, status_code=200)
+          return JSONResponse(content={'message':'Your vote has been deleted'}, status_code=200)
 
 
-@router.put('/', response_model=None)
-def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyResponse:
+@router.patch('/', response_model=None)
+def edit_reply(old_reply: ReplyEditID, new_reply: ReplyEdit, 
+               current_user: User=Depends(common.auth.get_current_user)) -> ReplyResponse:
 
-	edited = replies_services.edit_text(old_reply, new_reply)
+	edited = replies_services.edit_text(old_reply, new_reply, current_user)
 
 	if not edited:
 		raise BadRequestException(detail='Reply could not be edited')
@@ -85,11 +88,11 @@ def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse) -> ReplyRespo
 
 
 @router.delete('/', response_model=None)
-def delete_reply(reply_id: int) -> JSONResponse:
-
-	deleted = replies_services.delete(reply_id)
-
-	if not deleted:
-		raise BadRequestException(detail='Reply could not be deleted')
-
-	return JSONResponse(content={'message':'Reply has been deleted'}, status_code=200)
+def delete_reply(reply_id: int, current_user: User=Depends(common.auth.get_current_user)) -> JSONResponse:
+    
+    deleted = replies_services.delete(reply_id, current_user)
+    
+    if not deleted:
+        raise BadRequestException(detail='Reply could not be deleted')
+    
+    return JSONResponse(content={'message':'Reply deleted'}, status_code=200)

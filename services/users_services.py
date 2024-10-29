@@ -1,8 +1,34 @@
+
+from typing import Annotated
+from fastapi import Depends
+from common.exceptions import NotFoundException
+from data.models.user import User, UserResponse
 from common.exceptions import NotFoundException
 from services import replies_services
-from data.database import read_query
+from data.database import read_query, insert_query
 from data.models.vote import Vote
 
+    
+def create_user(user: User) -> int:
+    return insert_query(
+        'INSERT INTO users (username, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
+        (user.username, user.password, user.email, user.first_name, user.last_name)
+    )
+
+
+
+def get_user(username: str) -> UserResponse:
+    data = read_query( 'SELECT * FROM users WHERE username=?',(username,))
+    if not data:
+        return None
+    return UserResponse.from_query_result(data[0])
+
+
+
+def get_users():
+    data = read_query('SELECT * FROM users')
+    return [UserResponse.from_query_result(row) for row in data]
+    
 
 
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
