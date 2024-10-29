@@ -1,7 +1,7 @@
 from data.models.message import Message
 from data.models.user import UserInfo
 from data.database import read_query, insert_query, update_query
-from services.users_services import UserAuthDep
+from common.auth import UserAuthDep
 from fastapi import HTTPException
 
 
