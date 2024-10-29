@@ -7,7 +7,7 @@ from services import users_services
 from common.auth import oauth2_scheme
 
 
-users_router = APIRouter(prefix='/users', tags=['Users'])
+users_router = APIRouter(prefix='/api/users', tags=['Users'])
 
 
 @users_router.post('/register',  response_model= UserResponse)

@@ -5,7 +5,7 @@ from services.users_services import UserAuthDep
 from data.models.topic import TopicCreate, TopicUpdate, TopicResponse
 from services.topics_services import fetch_all_topics, verify_topic_owner
 
-topics_router = APIRouter(prefix='/topics',tags=['Topics'])
+topics_router = APIRouter(prefix='/api/topics',tags=['Topics'])
 
 #DA PROVERQ AUTH?
 @topics_router.get('/', response_model=List[TopicResponse])

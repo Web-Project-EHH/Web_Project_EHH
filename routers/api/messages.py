@@ -6,7 +6,7 @@ from data.database import read_query
 
 #DA OPRAVQ EXCEPTIONITE  !
 
-messages_router = APIRouter(prefix='/messages', tags=['messages'])
+messages_router = APIRouter(prefix='/api/messages', tags=['messages'])
 
 #WORKS
 @messages_router.post('/{receiver_id}', status_code=201)
