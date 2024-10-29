@@ -12,7 +12,7 @@ from typing import Literal, Optional
 from mariadb import IntegrityError
 
 
-router = APIRouter(prefix='/categories', tags=['Categories'])
+router = APIRouter(prefix='/api/categories', tags=['Categories'])
 
 
 @router.get('/', response_model=None)

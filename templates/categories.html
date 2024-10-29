@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Forum</h1>
+        <nav>
+            <ul>
+                <a href="http://127.0.0.1:8000/home/"><li>Home</li></a>
+                <a href="http://127.0.0.1:8000/categories/"><li>Categories</li></a>
+                <a href="http://127.0.0.1:8000/topics/"><li>Topics</li></a>
+                <a href="http://127.0.0.1:8000/register/"><li>Register</li></a>
+                <a href="http://127.0.0.1:8000/login/"><li>Login</li></a>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Categories</h2>
+            <ul>
+                {% for category in categories %}
+                    <li><a href="http://127.0.0.1:8000/categories/{{ category.id }}/">{{ category.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

@@ -6,7 +6,7 @@ from common.auth import UserAuthDep
 
 #DA OPRAVQ EXCEPTIONITE I DA DOVURSHA ROUTER-A
 
-messages_router = APIRouter(prefix='/messages', tags=['messages'])
+messages_router = APIRouter(prefix='/api/messages', tags=['messages'])
 
 
 @messages_router.post('/{receiver_id}', status_code=201)
