@@ -1,4 +1,5 @@
 from common.exceptions import NotFoundException
+from common.exceptions import NotFoundException
 from data.models.user import User, UserResponse
 from services import replies_services
 from data.database import read_query, insert_query
