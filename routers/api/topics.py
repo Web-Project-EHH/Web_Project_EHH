@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
 from services import topics_services
 from typing import Optional, List
-from services.users_services import UserAuthDep
-from data.models.topic import TopicCreate, TopicUpdate, TopicResponse
+from common.auth import UserAuthDep
+from data.models.topic import TopicCreate, TopicBestReplyUpdate, TopicResponse
 from services.topics_services import fetch_all_topics, verify_topic_owner
 
 topics_router = APIRouter(prefix='/api/topics',tags=['Topics'])
@@ -108,7 +108,7 @@ def create_topic(new_topic: TopicCreate, user: UserAuthDep):
 
 #WORKS
 @topics_router.patch('/{topic_id}/best_reply')
-def update_topic_best_reply(topic_id: int, current_user: UserAuthDep, topic_update: TopicUpdate):
+def update_topic_best_reply(topic_id: int, current_user: UserAuthDep, topic_update: TopicBestReplyUpdate):
     """
     PATCH /topics/{topic_id}/best_reply
     Updates the best reply for a topic.
