@@ -7,7 +7,7 @@ from services import replies_services, votes_services
 from datetime import datetime
 
 
-router = APIRouter(prefix='/replies')
+router = APIRouter(prefix='/replies', tags=['Replies'])
 
 
 @router.get('/', response_model=None)
