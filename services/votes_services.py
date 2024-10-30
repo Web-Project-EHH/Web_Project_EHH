@@ -1,9 +1,10 @@
 from common.exceptions import ForbiddenException, NotFoundException
 from data.database import update_query
+from data.models.user import User
 from services import replies_services, users_services
 
 
-def vote(reply_id: int, user_id: int, type: bool) -> str | None:
+def vote(reply_id: int, type: bool, current_user: User) -> str | None:
 
     """
     Cast a vote on a reply by a user. The vote can be an upvote or a downvote, or get deleted if the user has
@@ -28,19 +29,19 @@ def vote(reply_id: int, user_id: int, type: bool) -> str | None:
     if not replies_services.exists(reply_id):
         raise NotFoundException(detail='Reply not found')
     
-    current_vote = users_services.has_voted(reply_id=reply_id, user_id=user_id)
+    current_vote = users_services.has_voted(reply_id=reply_id, user_id=current_user.id)
     response = None
 
     if current_vote: # Check if the there is a vote already and:
         
         if current_vote.type == type: # if it's the same type, delete it
-            deleted_vote = update_query('''DELETE FROM votes WHERE user_id = ? AND reply_id = ?''', (user_id, reply_id))
+            deleted_vote = update_query('''DELETE FROM votes WHERE user_id = ? AND reply_id = ?''', (current_user.id, reply_id))
             
             if deleted_vote:
                 response = 'vote deleted'
         
         else: # change it, if it's a different type
-            changed_vote = update_query('''UPDATE votes SET type = ? WHERE user_id = ? AND reply_id = ?''', (type, user_id, reply_id))
+            changed_vote = update_query('''UPDATE votes SET type = ? WHERE user_id = ? AND reply_id = ?''', (type, current_user.id, reply_id))
             if changed_vote:
                 if type == True: # return True if changed to an upvote
                     response = 'upvoted'
@@ -48,7 +49,7 @@ def vote(reply_id: int, user_id: int, type: bool) -> str | None:
                     response = 'downvoted'
     
     else: # Otherwise create a new vote
-        vote = update_query('''INSERT INTO votes (user_id, reply_id, type) VALUES(?, ?, ?)''', (user_id, reply_id, type))
+        vote = update_query('''INSERT INTO votes (user_id, reply_id, type) VALUES(?, ?, ?)''', (current_user.id, reply_id, type))
        
         if vote:
             if type == True:

@@ -61,3 +61,23 @@ class UserResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+
+class UserInfo(BaseModel):
+    username: str
+    email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    @classmethod
+    def from_query_result(cls, username, email, first_name, last_name):
+        return cls(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name
+        )
+
+# class AnonymousUser(BaseModel):
+#     raise NotImplementedError
+# DA OBSDUIM DALI SHTE GO POLZVAME
