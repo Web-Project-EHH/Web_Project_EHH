@@ -62,4 +62,4 @@ def exists(user_id: int) -> bool:
 
     return bool(user)
 
-UserAuthDep =  Annotated[User, Depends(get_current_user)]
+

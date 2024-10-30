@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from common import responses
 from data.models.message import MessageText
 from services import messages_services, users_services
-from services.users_services import UserAuthDep
+from common.auth import UserAuthDep
 
 #DA OPRAVQ EXCEPTIONITE I DA DOVURSHA ROUTER-A
 
