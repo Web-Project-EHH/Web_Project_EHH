@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
-from common.exceptions import ConflictException, NotFoundException, BadRequestException
+from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
 from data.models.topic import Topic, TopicCategoryResponseUser, TopicCategoryResponseAdmin, TopicCategoryResponseUser
 from data.models.user import User
 
@@ -341,3 +341,111 @@ def get_by_id(category_id: int, current_user: User):
     
             return {'Category': CategoryResponse.from_query_result(*category[0]) if category else 'No categories', 
                     'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else 'No topics'}
+        
+
+def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_user: User) -> bool:
+    if not admin_user.is_admin:
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    
+    category_status = read_query("SELECT * FROM categories WHERE category_id = ? AND is_private = 1", (category_id,))
+    if not category_status:
+        raise NotFoundException(detail='Category not found or not private')
+    
+    existing_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    if existing_access:
+        update_query("UPDATE users_categories_permissions SET write_access = ? WHERE user_id = ? AND category_id = ?", (write_access, user_id, category_id))
+        return {'message': 'Access updated'}
+    else:
+        insert_query("INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)", (user_id, category_id, write_access))
+        return {'message': 'Access granted'}
+    
+
+def has_read_access(user_id: int, category_id: int) -> bool:
+    user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    return bool(user_access)
+
+
+def get_read_content(category_id: int, user: User) -> dict:
+    category_data = read_query("SELECT * FROM categories WHERE category_id = ?", (category_id,))
+    if not category_data:
+        raise NotFoundException(detail='Category not found')
+    is_private = category_data[0][3]
+    if is_private and not has_read_access(user.id, category_id):
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    
+    topics = read_query("SELECT * FROM topics WHERE category_id = ?", (category_id,))
+    replies = read_query("SELECT * FROM replies WHERE topic_id IN (SELECT topic_id FROM topics WHERE category_id = ?)", (category_id,))
+    return {'topics': topics, 'replies': replies}
+
+
+def grant_write_access(user_id: int, category_id: int, admin_user: User) -> bool:
+    if not admin_user.is_admin:
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    
+    category_data = read_query("SELECT * FROM categories WHERE category_id = ?", (category_id,))
+    if not category_data:
+        raise NotFoundException(detail='Category not found or is not private')
+    existing_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id)) 
+    if existing_access:
+        update_query("UPDATE users_categories_permissions SET write_access = ? WHERE user_id = ? AND category_id = ?", (True, user_id, category_id))
+        return {'message': 'Write access updated'}
+    
+    else:
+        insert_query("INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)", (user_id, category_id, True))
+        return {'message': 'Write access granted'}
+    
+
+def has_write_access(user_id: int, category_id: int) -> bool:
+    user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    return bool(user_access)    
+
+
+def post_topic(category_id: int, title: str, user: User) -> int:
+    if not has_read_access(user.id, category_id):
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    
+    topic_id = insert_query("INSERT INTO topics (category_id, title, user_id) VALUES (?, ?, ?)", (category_id, title, user.id))
+    return topic_id
+
+
+def get_write_content(category_id: int, user: User) -> dict:
+    if not has_write_access(user.id, category_id):
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    
+    category_data = read_query("SELECT * FROM categories WHERE category_id = ?", (category_id,))
+    if not category_data:
+        raise NotFoundException(detail='Category not found or is not private')
+    
+    is_private = category_data[0][3]
+    if is_private and not has_read_access(user.id, category_id):
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    topics = read_query("SELECT * FROM topics WHERE category_id = ?", (category_id,))
+    replies = read_query("SELECT * FROM replies WHERE topic_id IN (SELECT topic_id FROM topics WHERE category_id = ?)", (category_id,))
+    return {'topics': topics, 'replies': replies}
+
+
+def revoke_access(user_id: int, category_id: int, admin_user: User) -> bool:
+    if not admin_user.is_admin:
+        raise ForbiddenException(detail='You do not have permission to access this resource')
+    
+    access_data = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    if not access_data:
+        raise NotFoundException(detail='User does not have access to this category')
+    
+    update_query("DELETE FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    return {'message': 'Access revoked'}
+
+
+def get_privileged_users(category_id: int) -> List[User]:
+    privileged_users = read_query('SELECT u.user_id, u.username, u.email, u.first_name, u.last_name, p.write_access FROM users u JOIN users_categories_permissions p ON u.user_id = p.user_id WHERE p.category_id = ?', (category_id,))
+    return [
+        {
+            'user_id': user[0], 
+            'username': user[1], 
+            'email': user[2], 
+            'first_name': user[3], 
+            'last_name': user[4], 
+            'write_access': bool(user[5])
+            } 
+            for user in privileged_users
+    ]

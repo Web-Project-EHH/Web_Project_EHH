@@ -1,6 +1,7 @@
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 import common.auth
+from common import auth
 from data.models.user import User
 from services import categories_services, users_services
 from fastapi import APIRouter, Depends, HTTPException
@@ -129,3 +130,43 @@ def delete_category(category_id: int = Query(int), delete_topics: bool = Query(F
 
     except IntegrityError:
         raise ForbiddenException(detail='Cannot delete a category that includes topics.')
+    
+
+@router.post('/grant-read-access', response_model=None)
+def grant_access(user_id: int, category_id: int, write_access: bool = False, admin_user: User = Depends(auth.get_current_admin_user)):
+    return categories_services.grant_read_access(user_id, category_id, write_access, admin_user)
+
+
+@router.get('/{category_id}/read-content', response_model=None)
+def category_content(category_id: int, user: User = Depends(auth.get_current_user)):
+    return categories_services.get_read_content(category_id, user)
+
+
+@router.post('/{category_id}/grant-write-access', response_model=None)
+def grant_write_access(user_id: int, category_id: int, admin_user: User = Depends(auth.get_current_admin_user)):
+    return categories_services.grant_write_access(user_id, category_id, admin_user)
+
+
+@router.post('/{category_id}/topics', response_model=None)
+def create_topic(category_id: int, title: str, user: User = Depends(auth.get_current_user)):
+    return categories_services.post_topic(category_id, title, user)
+
+
+@router.get('/{category_id}/write-content', response_model=None)
+def get_content(category_id: int, user: User = Depends(auth.get_current_user)):
+    return categories_services.get_write_content(category_id, user)
+
+
+@router.delete('/{category_id}/revoke-access', response_model=None)
+def revoke_category_access(user_id: int, category_id: int, admin_user: User = Depends(auth.get_current_admin_user)):
+    return categories_services.revoke_access(user_id, category_id, admin_user)
+
+
+@router.get('/{category_id}/privileged_users', response_model=None)
+def view_privileged_users(category_id: int, admin_user: User = Depends(auth.get_current_admin_user)):
+    privileged_users = categories_services.get_privileged_users(category_id)
+
+    if not privileged_users:
+        raise NotFoundException(detail='No privileged users found')
+
+    return {'category_id': category_id, 'privileged_users': privileged_users}    
