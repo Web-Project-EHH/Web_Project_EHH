@@ -1,16 +1,13 @@
 from typing import Annotated
-from typing import Annotated
 from fastapi import Depends
 from common.exceptions import NotFoundException
-from common.exceptions import NotFoundException
 from data.models.user import User, UserResponse
+from common.exceptions import NotFoundException
 from services import replies_services
 from data.database import read_query, insert_query
 from data.models.vote import Vote
-from common.auth import get_password_hash
-from common.auth import get_password_hash
 
-    
+
 def create_user(user: User) -> int:
     return insert_query(
         'INSERT INTO users (username, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
@@ -30,11 +27,11 @@ def get_user(username: str) -> UserResponse:
 def get_users():
     data = read_query('SELECT * FROM users')
     return [UserResponse.from_query_result(row) for row in data]
-    
+
 
 
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
-    
+
     """
     Checks if a user has voted on a specific reply.
 
@@ -51,38 +48,17 @@ def has_voted(user_id: int, reply_id: int) -> Vote | None:
 
     if not exists(user_id):
         raise NotFoundException(detail='User does not exist')
-    
+
     if not replies_services.exists(reply_id):
         raise NotFoundException(detail='Reply does not exist')
-    
+
     vote = read_query('''SELECT user_id, reply_id, type FROM votes WHERE user_id = ? AND reply_id = ?''', (user_id, reply_id))
 
     return next((Vote.from_query_result(*row) for row in vote), None)
 
 
 def exists(user_id: int) -> bool:
-    
+
     user = read_query('''SELECT user_id FROM users WHERE user_id = ?''', (user_id,))
 
     return bool(user)
-
-def hash_existing_user_passwords():
-    users = read_query('SELECT user_id, password FROM users')
-    
-    for user_id, plain_password in users:
-        if len(plain_password) != 60:
-            hashed_password = get_password_hash(plain_password)
-            
-            insert_query('UPDATE users SET password = ? WHERE user_id = ?', (hashed_password, user_id))
-    
-    print("All user passwords have been hashed successfully.")
-def hash_existing_user_passwords():
-    users = read_query('SELECT user_id, password FROM users')
-    
-    for user_id, plain_password in users:
-        if len(plain_password) != 60:
-            hashed_password = get_password_hash(plain_password)
-            
-            insert_query('UPDATE users SET password = ? WHERE user_id = ?', (hashed_password, user_id))
-    
-    print("All user passwords have been hashed successfully.")

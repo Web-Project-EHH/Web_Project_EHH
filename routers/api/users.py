@@ -14,7 +14,7 @@ users_router = APIRouter(prefix='/api/users', tags=['Users'])
 def register_user (user: UserLogin):
     if users_services.get_user(user.username):
         return BadRequest('User already exists') 
-    
+
     hashed_password =  auth.get_password_hash(user.password) 
     user.password = hashed_password
     user_id = users_services.create_user(user)
@@ -47,7 +47,7 @@ def lougout_user(token: str = Depends(oauth2_scheme)):
     auth.verify_token(token)
     auth.token_blacklist.add(token)
     return 'Logged out successfully'
-    
+
 
 @users_router.get('/', response_model=list[UserResponse])
 def get_all_users(admin: User = Depends(auth.get_current_admin_user)):

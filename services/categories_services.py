@@ -1,7 +1,7 @@
 from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
-from common.exceptions import ConflictException, NotFoundException, BadRequestException
+from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
 from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
 from data.models.user import User
 
