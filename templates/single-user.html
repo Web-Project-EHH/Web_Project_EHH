@@ -1,0 +1,11 @@
+{ extends "base.html" }
+
+{ block title }{{ user.username }} - Forum{ endblock }
+
+{ block content }
+    <section id="user">
+        <h2>{{ user.username }}</h2>
+        <p>{{ user.email }}</p>
+        <p>{{ user.created_at }}</p>
+    </section>
+{ endblock }

@@ -1,10 +1,10 @@
 from typing import Optional, Literal, List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from common.exceptions import NotFoundException, BadRequestException
 from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID, ReplyResponse
 from data.models.user import User
-from services import replies_services, votes_services, users_services
+from services import replies_services, votes_services
 from datetime import datetime
 import common.auth
 

@@ -1,12 +1,10 @@
 from datetime import datetime
-
-from fastapi import Depends
 from data.database import read_query, insert_query, update_query
 from data.models.reply import Reply, ReplyCreate, ReplyResponse
 from typing import List
 from common.exceptions import ForbiddenException, NotFoundException
 from data.models.user import User
-from services import users_services
+
 
 def get_replies(reply_id: int = None, text: str = None, user_id: int = None, user_name: str = None,
                 topic_id: int = None, topic_title: str = None, sort_by: str = None, sort: str = None,
