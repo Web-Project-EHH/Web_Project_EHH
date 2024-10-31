@@ -8,7 +8,11 @@
     {% from "macros.html" import load_header, load_footer %}
 </head>
 <body>
+    {% if token %}
+    {{ load_header(get_user(token)) }}
+    {% else %}
     {{ load_header() }}
+    {% endif %}
     {% block content %}{% endblock %}
     {{ load_footer() }}
 </body>

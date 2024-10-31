@@ -1,12 +1,10 @@
 from datetime import datetime
 from unittest import TestCase
-from common.exceptions import ConflictException, ForbiddenException, NotFoundException
-from data.models.category import Category, CategoryResponse
+from common.exceptions import ForbiddenException, NotFoundException
 from data.models.reply import Reply, ReplyResponse
-from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
-from test_models import mock_category, mock_user, mock_reply
+from test_models import mock_user, mock_reply
 from unittest.mock import patch
-from services import categories_services, replies_services
+from services import replies_services
 
 DATE = datetime(2024, 10, 28, 10, 30)
 
@@ -72,7 +70,7 @@ class TestReplyServices(TestCase):
         mock_exists.return_value = True
         mock_read_query.return_value = [('Paul',)]
         with self.assertRaises(ForbiddenException):
-            result = replies_services.edit_text(self.testreply1, self.testreply2, self.testuser2)
+            replies_services.edit_text(self.testreply1, self.testreply2, self.testuser2)
 
     @patch('services.replies_services.exists')
     @patch('services.replies_services.read_query')
