@@ -1,4 +1,4 @@
-from common.exceptions import ForbiddenException, NotFoundException
+from common.exceptions import NotFoundException
 from data.database import update_query
 from data.models.user import User
 from services import replies_services, users_services
@@ -43,18 +43,12 @@ def vote(reply_id: int, type: bool, current_user: User) -> str | None:
         else: # change it, if it's a different type
             changed_vote = update_query('''UPDATE votes SET type = ? WHERE user_id = ? AND reply_id = ?''', (type, current_user.id, reply_id))
             if changed_vote:
-                if type == True: # return True if changed to an upvote
-                    response = 'upvoted'
-                elif type == False: # othewise return False
-                    response = 'downvoted'
+                response = 'upvoted' if type else 'downvoted'
     
     else: # Otherwise create a new vote
         vote = update_query('''INSERT INTO votes (user_id, reply_id, type) VALUES(?, ?, ?)''', (current_user.id, reply_id, type))
        
         if vote:
-            if type == True:
-                response = 'upvoted'
-            elif type == False:
-                response = 'downvoted'
+            response = 'upvoted' if type else 'downvoted'
         
     return response

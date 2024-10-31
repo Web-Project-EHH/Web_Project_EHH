@@ -3,7 +3,7 @@ from data.models.user import User
 from services import categories_services
 from fastapi import APIRouter, Depends, Request
 from common.exceptions import BadRequestException, ForbiddenException
-from data.models.category import CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
+from data.models.category import CategoryChangeName, CategoryChangeNameID, CategoryCreate
 from fastapi import Query
 from typing import Literal, Optional
 from mariadb import IntegrityError

@@ -1,11 +1,10 @@
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
 import common.auth
 from common import auth
 from data.models.user import User
-from services import categories_services, users_services
-from fastapi import APIRouter, Depends, HTTPException
-from common.exceptions import ConflictException, NotFoundException, BadRequestException, ForbiddenException
+from services import categories_services
+from fastapi import APIRouter, Depends
+from common.exceptions import NotFoundException, BadRequestException, ForbiddenException
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
 from fastapi import Query

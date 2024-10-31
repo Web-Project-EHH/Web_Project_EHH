@@ -1,9 +1,5 @@
-
-from typing import Annotated
-from fastapi import Depends
 from common.exceptions import NotFoundException
 from data.models.user import User, UserResponse
-from common.exceptions import NotFoundException
 from services import replies_services
 from data.database import read_query, insert_query
 from data.models.vote import Vote
