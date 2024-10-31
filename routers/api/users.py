@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from common import auth
-from common.responses import BadRequest, Forbidden
+from common.responses import BadRequest
 from data.models.user import TokenResponse, User, UserLogin, UserResponse
 from services import users_services
 from common.auth import oauth2_scheme
