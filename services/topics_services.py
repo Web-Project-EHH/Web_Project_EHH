@@ -1,28 +1,42 @@
 from __future__ import annotations
-from data.models.topic import PositiveInt
-
+from fastapi import Query
 from data.models.topic import TopicResponse, TopicCreate
-from data.database import read_query, update_query, insert_query, query_count
-from mariadb import IntegrityError
-from starlette.requests import Request
+from data.database import read_query, update_query, insert_query
+
 
 DEFAULT_BEST_REPLY_NONE = None
 
-def exists(topic_id: PositiveInt):
+
+#WORKS
+def exists(topic_id: int):
+    """
+    Checks if a topic with the provided ID exists.
+    """
     return any(read_query('''SELECT 1 FROM topics WHERE topic_id=?''', (id,)))
 
 
+#WORKS
 def fetch_all_topics(
-        search: str = None,
-        username: str = None,
-        category: str = None,
-        status: str = None,
-        sort: str = None,
-        sort_by: str = None
+        search: str = Query(None, description="Search by topic title"),
+        username: str = Query(None, description="Filter by username of the topic creator"),
+        category: str = Query(None, description="Filter by category name"),
+        status: str = Query(None, description="Filter by topic status: 'open' or 'closed'"),
+        sort: str = Query(None, description="Sort order: 'asc' or 'desc' (use with sort_by)"),
+        sort_by: str = Query(None, description="Field to sort by, e.g., 'topic_id', 'user_id'")
     ):
+    """
+    Fetches all topics based on the provided filters and sorting options.
+    -search: Search by topic title
+    -username: Filter by username of the topic creator
+    -category: Filter by category name
+    -status: Filter by topic status: 'open' or 'closed'
+    -sort: Sort order: 'asc' or 'desc' (use with sort_by)
+    -sort_by: Field to sort by, e.g., 'topic_id', 'user_id'
+    """
     params, filters = (), []
     sql = (
-        '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, t.best_reply_id, t.category_id, c.name
+        '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, 
+           t.best_reply_id, t.category_id, c.name
         FROM topics t
         JOIN users u ON t.user_id = u.user_id
         JOIN categories c ON t.category_id = c.category_id '''
@@ -38,20 +52,15 @@ def fetch_all_topics(
         filters.append('c.name = ?')
         params += (category,)
     if status:
-        filters.append('t.is_locked = ?')
-        params += (1 if status == 'open' else 0)
+        if status in ['open', 'closed']:
+            filters.append('t.is_locked = ?')
+            params += (1 if status == 'closed' else 0,)
 
     sql += (" WHERE " + " AND ".join(filters) if filters else "")
 
-    if sort and sort != 'topic_id':
-        if sort_by == 'user_id':
-            sort_by = 't.user_id'
-        elif sort_by == 'category_id':
-            sort_by = 't.category_id'
-        elif sort_by == 'status':
-            sort_by = 't.is_locked'
-
-        sql += f' ORDER BY {sort_by} IS NULL, {sort_by} {sort.upper()}'
+    if sort_by and sort_by in ['topic_id', 'user_id', 'category_id', 'status']:
+        order = "ASC" if sort == "asc" else "DESC"
+        sql += f' ORDER BY {sort_by} {order}'
 
     data = read_query(sql, params)
     topics = [TopicResponse.from_query(*row) for row in data]
@@ -59,87 +68,114 @@ def fetch_all_topics(
     return topics
 
 
-def fetch_topic_by_id(topic_id: PositiveInt) -> TopicResponse | None:
-     data = read_query(
-         '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, t.best_reply_id, t.category_id, c.name\n
-              FROM topics t\n
-              JOIN users u ON t.user_id = u.user_id\n
-              JOIN categories c ON t.category_id = c.category_id WHERE t.topic_id = ?''', (topic_id,))
+#WORKS
+def fetch_topic_by_id(topic_id: int) -> TopicResponse | None:
+    '''
+    Fetches a topic by its ID and returns a TopicResponse object with all the replies.
+    '''
+    data = read_query(
+        '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, t.best_reply_id, t.category_id, c.name
+         FROM topics t
+         JOIN users u ON t.user_id = u.user_id
+         JOIN categories c ON t.category_id = c.category_id 
+         WHERE t.topic_id = ?''', (topic_id,)
+    )
 
-     return next((TopicResponse.from_query(*row) for row in data), None)
+    return next((TopicResponse.from_query(*row) for row in data), None)
 
 
-def create_new_topic(topic: TopicCreate, user_id: PositiveInt):
-    try:
-        new_topic_id = insert_query(
-            '''INSERT INTO topics(title, user_id, is_locked, best_reply_id, category_id) VALUES(?,?,?,?,?)''',
-            (topic.title, user_id, 1, DEFAULT_BEST_REPLY_NONE, topic.category_id)
-        )
-        return {
-            'topic_id': new_topic_id,
-            'title': topic.title,
-            'user_id': user_id,
-            'is_locked': 1,
-            'best_reply_id': DEFAULT_BEST_REPLY_NONE,
-            'category_id': topic.category_id
-        }
-    except IntegrityError as e:
-        return None
+#WORKS
+def create_new_topic(topic: TopicCreate, user_id: int):
+    """
+    Creates a new topic if the user and category exist.
+    """
+    existing_user = read_query('''SELECT 1 FROM users WHERE user_id = ?''', (user_id,))
+    if not existing_user:
+        return 'User does not exist'
+    
+    existing_category = read_query('''SELECT 1 FROM categories WHERE category_id = ?''', (topic.category_id,))
+    if not existing_category:
+        return 'Category does not exist'
+    
+    insert_query(
+        '''INSERT INTO topics(title, user_id, is_locked, best_reply_id, category_id) VALUES(?,?,?,?,?)''',
+        (topic.title, user_id, 0, DEFAULT_BEST_REPLY_NONE, topic.category_id)
+    )
+    
+    return 'Topic created successfully'
+    
 
-def update_topic_title(topic_id, new_title):
+#WORKS
+def update_topic_title(topic_id: int, new_title: str):
+    """
+    Updates the title of a topic.
+    """
     update_query('''UPDATE topics SET title = ? WHERE topic_id = ?''', (new_title, topic_id))
 
     return f"Topic {topic_id} title updated to {new_title}"
 
 
-def update_best_reply_for_topic(topic_id, reply_id):
+#WORKS
+def update_best_reply_for_topic(topic_id: int, reply_id: int):
+    """
+    Updates the best reply for a topic.
+    """
     update_query('''UPDATE topics SET best_reply_id = ? WHERE topic_id = ?''', (reply_id, topic_id))
 
     return f"Best reply for topic {topic_id} updated to {reply_id}"
 
-def fetch_replies_for_topic(topic_id):
+
+#WORKS
+def fetch_replies_for_topic(topic_id: int):
+    """
+    Fetches all replies for a specific topic.
+    """
     data = read_query(
-        '''SELECT r.reply_id, r.content, r.user_id, u.username, r.topic_id, r.created_at
-        FROM replies r '
+        '''SELECT r.reply_id, r.text, r.user_id, u.username, r.topic_id, r.created
+        FROM replies r
         JOIN users u ON r.user_id = u.user_id
         WHERE r.topic_id = ?''',
         (topic_id,)
     )
-    return data
+    
+    return data if data else []
 
-def check_topic_access_permissions(user_id, topic_id):
+
+#WORKS
+def check_topic_access_permissions(user_id: int, topic_id: input):
+    """
+    Checks if the user has the necessary permissions to edit a topic.
+    """
     existing_topic = fetch_topic_by_id(topic_id)
-
     if not existing_topic:
-        return False, f"Topic #ID:{topic_id} doest not exists!"
+        return False, f"Topic #ID:{topic_id} does not exist!"
 
-    if existing_topic.user_id != user.user_id:
+    if existing_topic.user_id != user_id:
         return False, 'You are not allowed to edit this topic.'
 
-    if existing_topic.status == 'closed':
-        return False, 'This topic is locked'
-
-#трябва да опправя locked/closed.
-
-#ДА ИМПОРТНА ЮЗЪР ОТ ЕЛИЦА И ДА СИ ДОВЪРША КОДА
-    if existing_topic.user_id != user.user_id:
-        return False, 'You are not allowed to edit topics that does not belong to you.'
-
     if existing_topic.status == "closed":
-        return False, 'Topic is closed.'
+        return False, 'This topic is locked.'
 
     return True, 'OK'
 
-def lock_or_unlock_topic(topic_id, lock_status: bool):
+
+#WORKS
+def lock_or_unlock_topic(topic_id: int, lock_status: bool):
+    """
+    Locks or unlocks a topic based on the provided status.
+    """
     update_query('''UPDATE topics SET is_locked = ? WHERE topic_id = ?''',
                  (lock_status, topic_id))
 
-def verify_topic_owner(user_id, topic_id):
-    data = read_query('''SELECT FROM topics = ? WHERE topic_id = ? AND user_id = ?''',
+
+#WORKS
+def verify_topic_owner(user_id: int, topic_id: int):
+    """
+    Verifies if the user is the owner of the topic.
+    """
+    data = read_query('''SELECT * FROM topics WHERE topic_id = ? AND user_id = ?''',
                       (topic_id, user_id))
 
     if not data:
         return False
     return True
-
-
