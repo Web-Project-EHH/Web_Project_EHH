@@ -12,7 +12,7 @@ from services.users_services import get_user
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/users/login', auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/users/login', auto_error=False)
 token_blacklist = set()
 
 
