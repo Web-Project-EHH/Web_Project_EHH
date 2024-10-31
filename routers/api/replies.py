@@ -1,15 +1,15 @@
 from typing import Optional, Literal, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
-from common import auth
 from common.exceptions import NotFoundException, BadRequestException
-from data.models.reply import Reply, ReplyResponse
+from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID, ReplyResponse
 from data.models.user import User
 from services import replies_services, votes_services, users_services
 from datetime import datetime
+import common.auth
 
 
-router = APIRouter(prefix='/replies', tags=['Replies'])
+router = APIRouter(prefix='/api/replies', tags=['Replies'])
 
 
 @router.get('/', response_model=None)
@@ -48,7 +48,7 @@ def get_reply_by_id(reply_id: int):
     
 
 @router.post('/', response_model=Reply)
-def create_reply(reply: Reply, current_user: User = Depends(auth.get_current_user)) -> Reply:
+def create_reply(reply: ReplyCreate, current_user: User = Depends(common.auth.get_current_user)) -> Reply:
 
         reply = replies_services.create(reply, current_user)
 
@@ -58,7 +58,7 @@ def create_reply(reply: Reply, current_user: User = Depends(auth.get_current_use
         return reply
 
 @router.post('/{reply_id}/vote', response_model=None)
-def vote(reply_id: int, type: bool, current_user: User=Depends(auth.get_current_user)) -> JSONResponse:
+def vote(reply_id: int, type: bool, current_user: User=Depends(common.auth.get_current_user)) -> JSONResponse:
     
     vote = votes_services.vote(reply_id=reply_id, type=type, current_user=current_user)
                                     
@@ -76,8 +76,8 @@ def vote(reply_id: int, type: bool, current_user: User=Depends(auth.get_current_
 
 
 @router.patch('/', response_model=None)
-def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse, 
-               current_user: User=Depends(auth.get_current_user)) -> ReplyResponse:
+def edit_reply(old_reply: ReplyEditID, new_reply: ReplyEdit, 
+               current_user: User=Depends(common.auth.get_current_user)) -> ReplyResponse:
 
 	edited = replies_services.edit_text(old_reply, new_reply, current_user)
 
@@ -88,7 +88,7 @@ def edit_reply(old_reply: ReplyResponse, new_reply: ReplyResponse,
 
 
 @router.delete('/', response_model=None)
-def delete_reply(reply_id: int, current_user: User=Depends(auth.get_current_user)) -> JSONResponse:
+def delete_reply(reply_id: int, current_user: User=Depends(common.auth.get_current_user)) -> JSONResponse:
     
     deleted = replies_services.delete(reply_id, current_user)
     

@@ -1,4 +1,6 @@
 
+from typing import Annotated
+from fastapi import Depends
 from common.exceptions import NotFoundException
 from data.models.user import User, UserResponse
 from common.exceptions import NotFoundException
@@ -61,5 +63,3 @@ def exists(user_id: int) -> bool:
     user = read_query('''SELECT user_id FROM users WHERE user_id = ?''', (user_id,))
 
     return bool(user)
-
-

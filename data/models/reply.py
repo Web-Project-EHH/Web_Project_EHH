@@ -23,3 +23,16 @@ class ReplyResponse(BaseModel):
     @classmethod
     def from_query_result(cls, id, text):
         return cls(id=id, text=text)
+
+class ReplyEditID(BaseModel):
+
+    id: int
+
+class ReplyEdit(BaseModel):
+
+    text: str = Field(..., min_length=1)
+
+class ReplyCreate(BaseModel):
+
+    text: str = Field(..., min_length=1)
+    topic_id: int

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from data.database import read_query, insert_query, update_query
-from data.models.category import Category, CategoryResponse
+from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
 from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
 from data.models.topic import Topic, TopicCategoryResponseUser, TopicCategoryResponseAdmin, TopicCategoryResponseUser
@@ -62,7 +62,7 @@ def get_categories(current_user: User,
         return next((CategoryResponse.from_query_result(*row) for row in categories), None)
     
 
-def create(category: Category) -> Category | None:
+def create(category: CategoryCreate) -> Category | None:
 
     """
     Create a new category in the database.
@@ -83,9 +83,7 @@ def create(category: Category) -> Category | None:
     generated_id = insert_query('''INSERT INTO categories (name, is_locked, is_private) VALUES (?, ?, ?)''',
                                  (category.name, category.is_locked, category.is_private))
 
-    category.id = generated_id
-
-    return category if category else None
+    return Category(id=generated_id, name=category.name, is_locked=category.is_locked, is_private=category.is_private) if generated_id else None
     
 
 def exists(category_id: int = None, name: str = None) -> bool:
@@ -153,7 +151,7 @@ def delete(category_id: int, delete_topics: bool = False) ->  str | None:
         return 'only category deleted'
     
 
-def update_name(old_category: CategoryResponse, new_category: CategoryResponse) -> CategoryResponse | None:
+def update_name(old_category: CategoryChangeNameID, new_category: CategoryChangeName) -> CategoryResponse | None:
 
     """
     Update the name of an existing category.
@@ -171,7 +169,7 @@ def update_name(old_category: CategoryResponse, new_category: CategoryResponse) 
         BadRequestException: If the new category name is not provided.
     """
 
-    if not (exists(name=old_category.name) or exists(category_id=old_category.id)):
+    if not exists(category_id=old_category.id):
         raise NotFoundException(detail='Category not found')
     
     if exists(name=new_category.name):

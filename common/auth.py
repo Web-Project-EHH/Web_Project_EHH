@@ -12,7 +12,7 @@ from services.users_services import get_user
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/users/login', auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/users/login', auto_error=False)
 token_blacklist = set()
 
 
@@ -34,6 +34,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 def verify_token(token: str):
     if token in token_blacklist:
         raise ForbiddenException("Token has been revoked")
+    
+    if not token:
+        raise UnauthorizedException("Could not validate credentials")
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
