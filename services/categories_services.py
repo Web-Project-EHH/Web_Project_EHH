@@ -358,9 +358,13 @@ def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_
     else:
         insert_query("INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)", (user_id, category_id, write_access))
         return {'message': 'Access granted'}
+    
+
 def has_read_access(user_id: int, category_id: int) -> bool:
     user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
     return bool(user_access)
+
+
 def get_read_content(category_id: int, user: User) -> dict:
     category_data = read_query("SELECT * FROM categories WHERE category_id = ?", (category_id,))
     if not category_data:
@@ -372,6 +376,8 @@ def get_read_content(category_id: int, user: User) -> dict:
     topics = read_query("SELECT * FROM topics WHERE category_id = ?", (category_id,))
     replies = read_query("SELECT * FROM replies WHERE topic_id IN (SELECT topic_id FROM topics WHERE category_id = ?)", (category_id,))
     return {'topics': topics, 'replies': replies}
+
+
 def grant_write_access(user_id: int, category_id: int, admin_user: User) -> bool:
     if not admin_user.is_admin:
         raise ForbiddenException(detail='You do not have permission to access this resource')
@@ -388,15 +394,20 @@ def grant_write_access(user_id: int, category_id: int, admin_user: User) -> bool
         insert_query("INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)", (user_id, category_id, True))
         return {'message': 'Write access granted'}
     
+
 def has_write_access(user_id: int, category_id: int) -> bool:
     user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
     return bool(user_access)    
+
+
 def post_topic(category_id: int, title: str, user: User) -> int:
     if not has_read_access(user.id, category_id):
         raise ForbiddenException(detail='You do not have permission to access this resource')
     
     topic_id = insert_query("INSERT INTO topics (category_id, title, user_id) VALUES (?, ?, ?)", (category_id, title, user.id))
     return topic_id
+
+
 def get_write_content(category_id: int, user: User) -> dict:
     if not has_write_access(user.id, category_id):
         raise ForbiddenException(detail='You do not have permission to access this resource')
@@ -411,6 +422,8 @@ def get_write_content(category_id: int, user: User) -> dict:
     topics = read_query("SELECT * FROM topics WHERE category_id = ?", (category_id,))
     replies = read_query("SELECT * FROM replies WHERE topic_id IN (SELECT topic_id FROM topics WHERE category_id = ?)", (category_id,))
     return {'topics': topics, 'replies': replies}
+
+
 def revoke_access(user_id: int, category_id: int, admin_user: User) -> bool:
     if not admin_user.is_admin:
         raise ForbiddenException(detail='You do not have permission to access this resource')
@@ -421,6 +434,8 @@ def revoke_access(user_id: int, category_id: int, admin_user: User) -> bool:
     
     update_query("DELETE FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
     return {'message': 'Access revoked'}
+
+
 def get_privileged_users(category_id: int) -> List[User]:
     privileged_users = read_query('SELECT u.user_id, u.username, u.email, u.first_name, u.last_name, p.write_access FROM users u JOIN users_categories_permissions p ON u.user_id = p.user_id WHERE p.category_id = ?', (category_id,))
     return [
