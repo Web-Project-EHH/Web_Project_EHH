@@ -19,13 +19,15 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    sort_by: Literal["name", "category_id"] | None = Query(default=None), 
                    sort: Literal["asc", "desc",] | None = Query(default=None),
                    limit: int = Query(default=10, ge=1),
-                   offset: int = Query(default=0, ge=0),
-                   current_user: User = Depends(common.auth.get_current_user), request: Request = None):
+                   offset: int = Query(default=0, ge=0), request: Request = None):
+
+    token = request.cookies.get('token')
+    current_user = common.auth.get_current_user(token)
 
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
     
-    token = request.cookies.get('token')
+    
     
     return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'token': token}, request=request) 
 

@@ -188,3 +188,26 @@ footer p {
         padding: 1rem;
     }
 }
+
+/* Unauthorized Section */
+section#unauthorized {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background-color: #ffe0e0; /* Light red background to indicate error */
+    color: #d9534f; /* Darker red text for emphasis */
+    border: 1px solid #d9534f; /* Border matching the text color */
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+section#unauthorized h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+section#unauthorized p {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
