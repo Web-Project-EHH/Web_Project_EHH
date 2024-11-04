@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from common.exceptions import ForbiddenException, UnauthorizedException
 from data.models.user import User, UserResponse
-from data.database import read_query
+from data.database import insert_query, read_query
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from services.users_services import get_user
 
@@ -70,3 +70,14 @@ def get_current_admin_user(user: User = Depends(get_current_user)):
     return user
 
 UserAuthDep =  Annotated[User, Depends(get_current_user)]
+
+def hash_existing_user_passwords():
+    users = read_query('SELECT user_id, password FROM users')
+    
+    for user_id, plain_password in users:
+        if len(plain_password) != 60:
+            hashed_password = get_password_hash(plain_password)
+            
+            insert_query('UPDATE users SET password = ? WHERE user_id = ?', (hashed_password, user_id))
+    
+    print("All user passwords have been hashed successfully.")

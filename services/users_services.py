@@ -1,5 +1,3 @@
-from typing import Annotated
-from fastapi import Depends
 from common.exceptions import NotFoundException
 from data.models.user import User, UserResponse
 from common.exceptions import NotFoundException
@@ -15,7 +13,6 @@ def create_user(user: User) -> int:
     )
 
 
-
 def get_user(username: str) -> UserResponse:
     data = read_query( 'SELECT * FROM users WHERE username=?',(username,))
     if not data:
@@ -23,12 +20,10 @@ def get_user(username: str) -> UserResponse:
     return UserResponse.from_query_result(data[0])
 
 
-
 def get_users():
     data = read_query('SELECT * FROM users')
     return [UserResponse.from_query_result(row) for row in data]
-
-
+    
 
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
 

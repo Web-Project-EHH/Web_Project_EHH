@@ -17,7 +17,7 @@
                     {% if user %}
                     <li>Hello, <a href="/users/{{ user.id }}/">{{ user.username }}</a></li>
                     <form action="/users/logout" method="post" style="display:inline;">
-                        <button type="submit">Logout</button>
+                        <button id="logout_button" type="submit">Logout</button>
                     </form>
                     {% else %}
                         <a href="/users/register"><li>Register</li></a>

@@ -1,4 +1,5 @@
 import common.auth
+from common.template_config import CustomJinja2Templates
 from data.models.user import User
 from services import categories_services
 from fastapi import APIRouter, Depends, Request
@@ -7,11 +8,10 @@ from data.models.category import CategoryChangeName, CategoryChangeNameID, Categ
 from fastapi import Query
 from typing import Literal, Optional
 from mariadb import IntegrityError
-from fastapi.templating import Jinja2Templates
 
 
 router = APIRouter(prefix='/categories', tags=['Categories'])
-templates = Jinja2Templates(directory="templates")
+templates = CustomJinja2Templates(directory="templates")
 
 @router.get('/', response_model=None)
 def get_categories(category_id: Optional[int] = Query(default=None), 
@@ -19,21 +19,27 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    sort_by: Literal["name", "category_id"] | None = Query(default=None), 
                    sort: Literal["asc", "desc",] | None = Query(default=None),
                    limit: int = Query(default=10, ge=1),
-                   offset: int = Query(default=0, ge=0),
-                   current_user: User = Depends(common.auth.get_current_user), request: Request = None):
+                   offset: int = Query(default=0, ge=0), request: Request = None):
+
+    token = request.cookies.get('token')
+    current_user = common.auth.get_current_user(token)
 
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
     
-    return templates.TemplateResponse(name='categories.html', context={'categories': categories}, request=request) 
+    
+    
+    return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'token': token}, request=request) 
 
 
 @router.get('/{id}', response_model=None)
 def get_category_by_id(category_id: int, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
 
     category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
+
+    token = request.cookies.get('token')
     
-    return templates.TemplateResponse(name='single-category.html', context={'category': category}, request=request)
+    return templates.TemplateResponse(name='single-category.html', context={'category': category, 'token': token}, request=request)
 
 
 @router.post('/', response_model=None)
@@ -41,7 +47,9 @@ def create_category(category: CategoryCreate, admin: User = Depends(common.auth.
 
     new_category = categories_services.create(category)
 
-    return templates.TemplateResponse(name='single-category.html', context={'category': new_category}, request=request)
+    token = request.cookies.get('token')
+
+    return templates.TemplateResponse(name='single-category.html', context={'category': new_category, 'token': token}, request=request)
 
 
 @router.patch('/', response_model=None)

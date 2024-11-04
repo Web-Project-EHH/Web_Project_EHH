@@ -1,17 +1,17 @@
 from typing import Optional, Literal
 from fastapi import APIRouter, Depends, Query, Request
 from common.exceptions import BadRequestException
+from common.template_config import CustomJinja2Templates
 from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID
 from data.models.user import User
 from services import replies_services, votes_services
 from datetime import datetime
 import common.auth
-from fastapi.templating import Jinja2Templates
 
 
 
 router = APIRouter(prefix='/api/replies', tags=['Replies'])
-templates = Jinja2Templates(directory="templates")
+templates = CustomJinja2Templates(directory="templates")
 
 @router.get('/', response_model=None)
 def get_replies(reply_id: Optional[int] = Query(default=None), 
@@ -25,22 +25,22 @@ def get_replies(reply_id: Optional[int] = Query(default=None),
                    start_date: Optional[datetime] = Query(default=None),
                    end_date: Optional[datetime] = Query(default=None),
                    limit: int = Query(default=10, ge=1),
-                   offset: int = Query(default=0, ge=0), request: Request = None):
-
+                   offset: int = Query(default=0, ge=0), request: Request = None,
+                   current_user: User = Depends(common.auth.get_current_user)):
     replies = replies_services.get_replies(reply_id=reply_id, text=text, user_name=user_name, user_id=user_id, topic_id=topic_id,
                                            topic_title=topic_title, sort_by=sort_by, sort=sort, start_date=start_date,
                                            end_date=end_date, limit=limit, offset=offset)
     
     
-    return templates.TemplateResponse(name='replies.html', context={'replies': replies}, request=request)
+    return templates.TemplateResponse(name='replies.html', context={'replies': replies, 'user': current_user}, request=request)
 
 
 @router.get('/{id}', response_model=Reply)
-def get_reply_by_id(reply_id: int, request: Request = None):
+def get_reply_by_id(reply_id: int, request: Request = None, current_user: User = Depends(common.auth.get_current_user)):
       
     reply = replies_services.get_replies(reply_id=reply_id)
     
-    return templates.TemplateResponse(name='single-reply.html', context={'reply': reply}, request=request)
+    return templates.TemplateResponse(name='single-reply.html', context={'reply': reply, 'user': current_user}, request=request)
     
 
 @router.post('/', response_model=Reply)
@@ -48,7 +48,7 @@ def create_reply(reply: ReplyCreate, current_user: User = Depends(common.auth.ge
 
         reply = replies_services.create(reply, current_user)
         
-        return templates.TemplateResponse(name='single-reply.html', context={'reply': reply}, request=request)
+        return templates.TemplateResponse(name='single-reply.html', context={'reply': reply, 'user': current_user}, request=request)
 
 @router.post('/{reply_id}/vote', response_model=None)
 def vote(reply_id: int, type: bool, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
@@ -65,7 +65,7 @@ def vote(reply_id: int, type: bool, current_user: User=Depends(common.auth.get_c
          return templates.TemplateResponse(name='single-reply.html', context={'message':'You have downvoted'}, request=request)
     
     elif vote == 'vote deleted':
-         return templates.TemplateResponse(name='single-reply.html', context={'message':'Vote deleted'}, request=request)
+         return templates.TemplateResponse(name='single-reply.html', context={'message':'Vote deleted', 'user': current_user}, request=request)
 
 
 @router.patch('/', response_model=None)
@@ -74,11 +74,11 @@ def edit_reply(old_reply: ReplyEditID, new_reply: ReplyEdit,
 
 	edited = replies_services.edit_text(old_reply, new_reply, current_user)
 
-	return templates.TemplateResponse(name='single-reply.html', context={'reply': edited}, request=request)
+	return templates.TemplateResponse(name='single-reply.html', context={'reply': edited, 'user': current_user}, request=request)
 
 @router.delete('/', response_model=None)
 def delete_reply(reply_id: int, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
     
     deleted = replies_services.delete(reply_id, current_user)
     
-    return templates.TemplateResponse(name='single-reply.html', context={'reply': deleted}, request=request)
+    return templates.TemplateResponse(name='single-reply.html', context={'reply': deleted, 'user': current_user}, request=request)
