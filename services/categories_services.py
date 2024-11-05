@@ -326,8 +326,8 @@ def get_by_id(category_id: int, current_user: User):
         topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
                         WHERE category_id = ?''', (category_id,))
         
-        return {'Category': Category.from_query_result(*category[0] if category else 'No categories'), 
-            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else 'No topics'}
+        return {'Category': Category.from_query_result(*category[0] if category else None), 
+            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else None}
         
     else:
         category = read_query('''SELECT category_id, name FROM categories
@@ -338,8 +338,8 @@ def get_by_id(category_id: int, current_user: User):
             topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
                         WHERE is_locked = 0 AND category_id = ?''', (category_id,))
     
-            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else 'No categories', 
-                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else 'No topics'}
+            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
+                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
         
 
 def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_user: User) -> bool:
@@ -449,6 +449,15 @@ def get_privileged_users(category_id: int) -> List[User]:
             for user in privileged_users
     ]
 
-def count_categories() -> int:
-    count = read_query('SELECT COUNT(*) FROM categories')
-    return count[0][0] if count else 0
+def count_all_categories(current_user: User) -> int:
+    query = '''SELECT COUNT(*) FROM categories WHERE 1=1'''
+
+    if not current_user.is_admin:
+        query += ''' AND is_private = ?'''
+        params = [0]
+    else:
+        params = []
+
+    total_count = read_query(query, tuple(params))
+    
+    return total_count[0][0] if total_count else 0

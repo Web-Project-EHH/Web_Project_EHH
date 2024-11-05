@@ -9,31 +9,31 @@
                     <div class="category-actions">
 
                     <form action="/categories/{{category.id}}/delete" method="post" style="display:inline;">
-                        <input type="hidden" name="_method" value="DELETE">
+                        <input type="hidden" name="method" value="DELETE">
                     <button id="delete-category" type="submit" class="btn btn-danger">Delete</button>
 
                     {% if not category.is_locked %}
                     <form action="/categories/{{category.id}}/lock" method="post" style="display:inline;">
-                        <input type="hidden" name="_method" value="PATCH">
+                        <input type="hidden" name="method" value="PATCH">
                         <button id="lock-category" type="submit" class="btn btn-warning">Lock</button>
                     </form>
 
                     {% else %}
                     <form action="/categories/{{category.id}}/unlock" method="post" style="display:inline;">
-                        <input type="hidden" name="_method" value="PATCH">
+                        <input type="hidden" name="method" value="PATCH">
                         <button id="unlock-category" type="submit" class="btn btn-warning">Unlock</button>
                     </form>
                     {% endif %}
 
                     {% if not category.is_private %}
                     <form action="/categories/{{category.id}}/make_private" method="post" style="display:inline;">
-                        <input type="hidden" name="_method" value="PATCH">
+                        <input type="hidden" name="method" value="PATCH">
                         <button id="privatise-category" type="submit" class="btn btn-danger">Make Private</button>
                     </form>
 
                     {% else %}
                     <form action="/categories/{{category.id}}/make_private" method="post" style="display:inline;">
-                        <input type="hidden" name="_method" value="PATCH">
+                        <input type="hidden" name="method" value="PATCH">
                         <button id="unprivatise-category" type="submit" class="btn btn-danger">Make Public</button>
                     </form>
                     {% endif %}
@@ -43,7 +43,7 @@
             <p>Category not found.</p>
             {% endif %}
             {% if topics %}
-            {{ load_topics(topics, user=get_user(request)) }}
+            {{ load_topics(topics=topics, user=get_user(request)) }}
             {% else %}
             <p>No topics found.</p>
             {% endif %}

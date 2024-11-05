@@ -25,8 +25,8 @@ def get_categories(category_id: Optional[int] = Query(default=None),
 
     token = request.cookies.get('token')
     current_user = common.auth.get_current_user(token)
-    offset = (page - 1) * limit
-    total_categories = categories_services.count_categories()
+    offset = (page-1) * limit
+    total_categories = categories_services.count_all_categories(current_user)
     total_pages = math.ceil(total_categories / limit)
 
     if not current_user:
@@ -34,6 +34,11 @@ def get_categories(category_id: Optional[int] = Query(default=None),
     
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
+    if page > total_pages and total_categories > 0:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'Page not found'}, request=request)
+    
+    if not categories:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'No matching categories found'}, request=request)
     
     return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'page': page, 'total_pages': total_pages}, request=request) 
 
