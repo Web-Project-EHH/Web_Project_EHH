@@ -105,7 +105,12 @@ def lock_unlock_category(category_id: int, request: Request = None):
     
 
 @router.patch('/{category_id}/make_private', response_model=None)
-def make_category_private(category_id: int, admin: User = Depends(common.auth.get_current_admin_user), request: Request = None):
+def make_category_private(category_id: int, request: Request = None):
+
+    user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not user.is_admin:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
 
     result = categories_services.privatise_unprivatise(category_id)
 
@@ -113,21 +118,25 @@ def make_category_private(category_id: int, admin: User = Depends(common.auth.ge
         raise BadRequestException(detail='Operation failed')
 
     elif result == 'made private':
-        return templates.TemplateResponse(name='single-category.html', context={'category': 'Category made private'}, status_code=200, request=request)
-    
+        return JSONResponse({'message': 'Category made private'}, status_code=200)
+        
     elif result == 'made public':
-        return templates.TemplateResponse(name='single-category.html', context={'category': 'Category made public'}, status_code=200, request=request)
+        return JSONResponse({'message': 'Category made public'}, status_code=200)
 
     elif result == 'made private failed':
         raise BadRequestException(detail='Category could not be made private')
-    
+        
     elif result == 'made public failed':
         raise BadRequestException(detail='Category could not be made public')
 
 
-@router.delete('/', response_model=None)
-def delete_category(category_id: int = Query(int), delete_topics: bool = Query(False),
-                    admin: User = Depends(common.auth.get_current_admin_user), request: Request = None):
+@router.delete('/{category_id}', response_model=None)
+def delete_category(category_id: int, delete_topics: bool = Query(False), request: Request = None):
+
+    user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not user.is_admin:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
 
     try:
         
@@ -137,9 +146,10 @@ def delete_category(category_id: int = Query(int), delete_topics: bool = Query(F
             raise BadRequestException(detail='Category could not be deleted')
 
         elif result == 'everything deleted':
-            return templates.TemplateResponse(name='categories.html', context={'message': 'Category and topics deleted'}, status_code=200, request=request)
-        
+            return JSONResponse({'message': 'Category and topics deleted'}, status_code=200)
+                
         elif result == 'only category deleted':
-            return templates.TemplateResponse(name='categories.html', context={'message': 'Category deleted'}, status_code=200, request=request)
+            return JSONResponse({'message': 'Category deleted'}, status_code=200)
+            
     except IntegrityError:
         raise ForbiddenException(detail='Cannot delete a category that includes topics.')
