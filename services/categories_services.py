@@ -316,7 +316,7 @@ def privatise_unprivatise(category_id: int) -> str | None:
 def get_by_id(category_id: int, current_user: User):
 
     if not exists(category_id):
-        raise NotFoundException(detail='Category does not exist')
+        return None
     
     if current_user.is_admin:
         
@@ -448,3 +448,7 @@ def get_privileged_users(category_id: int) -> List[User]:
             } 
             for user in privileged_users
     ]
+
+def count_categories() -> int:
+    count = read_query('SELECT COUNT(*) FROM categories')
+    return count[0][0] if count else 0

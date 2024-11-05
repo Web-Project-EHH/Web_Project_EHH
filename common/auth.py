@@ -57,10 +57,12 @@ def authenticate_user(username: str, password: str) -> Optional[UserResponse]:
 
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
+    if not token:
+        return None
     payload = verify_token(token)
     username = payload.get('sub')
     if not username:
-        raise UnauthorizedException('Could not validate credentials')
+        return None
     return get_user(username)
 
 

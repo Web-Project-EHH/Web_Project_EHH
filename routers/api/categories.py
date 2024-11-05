@@ -24,6 +24,9 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    offset: int = Query(default=0, ge=0),
                    current_user: User = Depends(common.auth.get_current_user)) -> List[CategoryResponse] | CategoryResponse:
 
+    if not current_user:
+        raise ForbiddenException(detail='User not authenticated')
+    
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
     

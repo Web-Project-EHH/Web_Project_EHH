@@ -1,3 +1,4 @@
+import math
 import common.auth
 from common.template_config import CustomJinja2Templates
 from data.models.user import User
@@ -16,30 +17,41 @@ templates = CustomJinja2Templates(directory="templates")
 @router.get('/', response_model=None)
 def get_categories(category_id: Optional[int] = Query(default=None), 
                    name: Optional[str] = Query(default=None), 
-                   sort_by: Literal["name", "category_id"] | None = Query(default=None), 
-                   sort: Literal["asc", "desc",] | None = Query(default=None),
+                   sort_by: Literal["name", "category_id"] | None = Query(default='name'), 
+                   sort: Literal["asc", "desc",] | None = Query(default='asc'),
                    limit: int = Query(default=10, ge=1),
-                   offset: int = Query(default=0, ge=0), request: Request = None):
+                   offset: int = Query(default=0, ge=0), request: Request = None,
+                   page: int = Query(default=1, ge=1)):
 
     token = request.cookies.get('token')
     current_user = common.auth.get_current_user(token)
+    offset = (page - 1) * limit
+    total_categories = categories_services.count_categories()
+    total_pages = math.ceil(total_categories / limit)
 
+    if not current_user:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
+    
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
     
-    
-    
-    return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'token': token}, request=request) 
+    return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'page': page, 'total_pages': total_pages}, request=request) 
 
 
-@router.get('/{id}', response_model=None)
-def get_category_by_id(category_id: int, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
+@router.get('/{category_id}', response_model=None)
+def get_category_by_id(category_id: int, request: Request = None):
+
+    current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not current_user:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
 
     category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 
-    token = request.cookies.get('token')
+    if not category:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
     
-    return templates.TemplateResponse(name='single-category.html', context={'category': category, 'token': token}, request=request)
+    return templates.TemplateResponse(name='single-category.html', context={'category': category['Category'], 'topics': category['Topics']}, request=request)
 
 
 @router.post('/', response_model=None)
@@ -47,9 +59,7 @@ def create_category(category: CategoryCreate, admin: User = Depends(common.auth.
 
     new_category = categories_services.create(category)
 
-    token = request.cookies.get('token')
-
-    return templates.TemplateResponse(name='single-category.html', context={'category': new_category, 'token': token}, request=request)
+    return templates.TemplateResponse(name='single-category.html', context={'category': new_category}, request=request)
 
 
 @router.patch('/', response_model=None)
