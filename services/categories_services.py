@@ -452,6 +452,9 @@ def get_privileged_users(category_id: int) -> List[User]:
 def count_all_categories(current_user: User) -> int:
     query = '''SELECT COUNT(*) FROM categories WHERE 1=1'''
 
+    if not current_user:
+        return 0
+
     if not current_user.is_admin:
         query += ''' AND is_private = ?'''
         params = [0]
