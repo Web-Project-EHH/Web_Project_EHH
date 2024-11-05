@@ -1,4 +1,5 @@
 import math
+from fastapi.responses import JSONResponse
 import common.auth
 from common.template_config import CustomJinja2Templates
 from data.models.user import User
@@ -77,18 +78,24 @@ def update_category_name(old_category:CategoryChangeNameID, new_category: Catego
 
 
 @router.patch('/{category_id}/lock', response_model=None)
-def lock_unlock_category(category_id: int, admin: User = Depends(common.auth.get_current_admin_user), request: Request = None):
+def lock_unlock_category(category_id: int, request: Request = None):
 
+    user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not user.is_admin:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
+    category = categories_services.get_by_id(category_id=category_id, current_user=user)
+
+    if not category:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
+        
     result = categories_services.lock_unlock(category_id)
 
-    if not result:
-        raise BadRequestException(detail='Operation failed')
-
-    elif result == 'locked':
-        return templates.TemplateResponse(name='single-category.html', context={'category': 'Category locked'}, status_code=200, request=request)
+    if result == 'locked':
+        return JSONResponse({'message': 'Category locked'}, status_code=200)
     
     elif result == 'unlocked':
-        return templates.TemplateResponse(name='single-category.html', context={'category': 'Category unlocked'}, status_code=200, request=request)
+        return JSONResponse({'message': 'Category unlocked'}, status_code=200)
 
     elif result == 'lock failed':
         raise BadRequestException(detail='Category could not be locked')
