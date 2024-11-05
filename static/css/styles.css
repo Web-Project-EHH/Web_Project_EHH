@@ -5,14 +5,20 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     background-color: #f4f4f9;
     color: #333;
     line-height: 1.6;
+    margin: 0;
 }
 
-/* Header */
 header {
     background: linear-gradient(135deg, #2d87f0, #4a98ff);
     color: white;
@@ -27,14 +33,12 @@ header h1 {
     margin-bottom: 0.5rem;
 }
 
-/* Navigation */
 nav ul {
     list-style: none;
     display: flex;
     justify-content: center;
     gap: 2rem;
     padding: 1rem 0;
-
 }
 
 nav ul a {
@@ -61,7 +65,6 @@ nav ul a:hover::after {
     width: 100%;
 }
 
-/* Logout Button Styling */
 header nav form {
     position: absolute;
     top: 2rem;
@@ -85,17 +88,18 @@ header nav form {
     transform: translateY(-2px);
 }
 
-/* Main content */
 main {
+    flex-grow: 1;
     max-width: 900px;
     margin: 2rem auto;
     padding: 1.5rem;
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column; /* Ensure the items stack vertically */
 }
 
-/* Home Section */
 section#home h2 {
     font-size: 2rem;
     color: #2d87f0;
@@ -107,7 +111,6 @@ section#home p {
     margin-bottom: 1.5rem;
 }
 
-/* Register Section */
 section#register {
     margin-top: 2rem;
 }
@@ -140,7 +143,6 @@ section#register input:focus {
     border-color: #2d87f0;
 }
 
-/* Button styling */
 button {
     background-color: #2d87f0;
     color: white;
@@ -159,20 +161,18 @@ button:hover {
     transform: translateY(-2px);
 }
 
-/* Footer */
 footer {
     text-align: center;
-    padding: 1rem;
+    padding: 10px;
     background-color: #2d87f0;
     color: white;
-    margin-top: 2rem;
+    margin-top: auto;
 }
 
 footer p {
     font-size: 0.875rem;
 }
 
-/* Responsive adjustments */
 @media (max-width: 600px) {
     nav ul {
         flex-direction: column;
@@ -182,21 +182,15 @@ footer p {
     header h1 {
         font-size: 2rem;
     }
-
-    main {
-        margin: 1rem;
-        padding: 1rem;
-    }
 }
 
-/* Unauthorized Section */
 section#unauthorized {
     max-width: 600px;
     margin: 2rem auto;
     padding: 1.5rem;
-    background-color: #ffe0e0; /* Light red background to indicate error */
-    color: #d9534f; /* Darker red text for emphasis */
-    border: 1px solid #d9534f; /* Border matching the text color */
+    background-color: #ffe0e0;
+    color: #d9534f;
+    border: 1px solid #d9534f;
     border-radius: 8px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -211,3 +205,73 @@ section#unauthorized p {
     font-size: 1.1rem;
     font-weight: bold;
 }
+
+#pagination {
+    margin-top: auto; /* Pushes the pagination to the bottom */
+    text-align: center; /* Center-align the pagination links */
+}
+
+#pagination a {
+    padding: 0.5rem 1rem !important;
+    text-decoration: none;
+    color: #007bff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 5px !important;
+}
+
+#pagination a:hover {
+    background-color: #f0f0f0 !important;
+}
+
+#pagination span {
+    padding: 0.5rem !important;
+}
+
+/* Styles for the single category page */
+#single_category {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#single_category h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* Table styling */
+#topic table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#topic table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    font-size: 16px;
+}
+
+#topic table td a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+#topic table td a:hover {
+    text-decoration: underline;
+}
+
+/* No topic message styling */
+#topic p {
+    font-size: 18px;
+    color: #777;
+    text-align: center;
+    margin-top: 20px;
+}
+
