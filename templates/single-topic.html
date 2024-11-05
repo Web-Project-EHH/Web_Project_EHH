@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.title }}{% endblock %}
+{% block content %}
+    <section id="topic-details">
+        <h2>{{ topic.title }}</h2>
+        <p>Created by User ID: {{ topic.user_id }}</p>
+        <p>Category ID: {{ topic.category_id }}</p>
+        <p>Is Locked: {{ topic.is_locked }}</p>
+
+        <h3>Replies</h3>
+        <ul>
+            {% for reply in replies %}
+                <li>
+                    <p>{{ reply.text }}</p>
+                    <p>Posted by User ID: {{ reply.user_id }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Topics{% endblock %}
+{% block content %}
+    <section id="topics">
+        <h2>Topics</h2>
+        <ul>
+            {% for topic in topics %}
+                <li><a href="{{ url_for('get_topic_replies', topic_id=topic.topic_id) }}">{{ topic.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endblock %}
