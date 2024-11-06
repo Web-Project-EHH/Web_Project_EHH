@@ -24,8 +24,8 @@ class CategoryResponse(BaseModel):
 class CategoryCreate(BaseModel):
     
     name: str = Field(min_length=2, max_length=30, description='Category name must be between 2 and 30 characters')
-    is_locked: bool
-    is_private: bool
+    is_locked: bool = False
+    is_private: bool = False
 
     @classmethod
     def from_query_result(cls, id, name, is_locked, is_private):
