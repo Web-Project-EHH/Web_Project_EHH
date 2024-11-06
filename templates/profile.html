@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_user(request).username }} - Forum{% endblock %}
+
+{% block content %}
+<main>
+{{ load_profile(get_user(request)) }}
+</main>
+{% endblock %}

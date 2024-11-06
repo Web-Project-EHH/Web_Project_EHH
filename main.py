@@ -36,13 +36,6 @@ app.include_router(web_topics_router)
 app.include_router(web_users_router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.exception_handler(BadRequestException)
-async def validation_exception_handler(request: Request, exc: BadRequestException):
-    return templates.TemplateResponse(name='login_error.html', context={'request': request, 'error': exc}, status_code=400)
-
-@app.exception_handler(UnauthorizedException)
-async def unauthorised_exception_handler(request: Request, exc: UnauthorizedException):
-    return templates.TemplateResponse(name='unauthorized.html', context={'request': request, 'error': exc}, status_code=401)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

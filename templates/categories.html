@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Categories{% endblock %}
 {% block content %}
-    <section id="categories">
-        <h2>Categories</h2>
-        <ul>
-            {% for category in categories %}
-                <li><a href="/categories/">{{ category.name }}</a></li>
-            {% endfor %}
-        </ul>
-    </section>
+<main>
+{% if categories %}
+{{ load_categories(categories=categories, user=get_user(request), page=page, total_pages=total_pages) }}
+{% else %}
+<p> {{ error }} </p>
+{% endif %}
+</main>
 {% endblock %}
