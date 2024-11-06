@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from common import auth
@@ -12,6 +12,12 @@ templates = CustomJinja2Templates(directory="templates")
 
 @router.get('/', response_model=None)
 def serve_users(request: Request):
+
+    user = auth.get_current_user(request.cookies.get('token'))
+
+    if not user:
+        return templates.TemplateResponse(name="login.html", request=request, context={'error': 'You need to login to view this page'})
+    
     return templates.TemplateResponse(name="users.html", request=request)
 
 
@@ -75,10 +81,22 @@ def get_current_user_me(request: Request = None):
 
 @router.get('/search', response_model=None)
 def search_users(request: Request, username: str = Query(...)):
+
+    current_user = auth.get_current_user(request.cookies.get('token'))
+
+    if not current_user:
+        return templates.TemplateResponse(name="login.html", request=request, context={'error': 'You need to login to view this page'})
+
     users = users_services.get_users_by_username(username)
     return templates.TemplateResponse(request=request, name="users.html", context={'users': users})
 
 @router.get('/{user_id}', response_model=None)
 def get_user_by_id(user_id: int, request: Request = None):
+
+    current_user = auth.get_current_user(request.cookies.get('token'))
+
+    if not current_user:
+        return templates.TemplateResponse(name="login.html", request=request, context={'error': 'You need to login to view this page'})
+
     user = users_services.get_user_by_id(user_id)
     return templates.TemplateResponse(name="user_profile.html", request=request, context={'user': user})
