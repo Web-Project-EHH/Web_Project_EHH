@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<main>
+    <h1>Find a user</h1>
+
+    <form method="get" action="/users/search">
+        <label for="username">Username:</label>
+        <input type="text" name="username" placeholder="Enter username" required>
+        <button type="submit">Search</button>
+    </form>
+    {% if users %}
+    <div>
+        {% for user in users %}
+        <p><a href="/users/{{ user.id }}/">{{ user.username }}</a></p>
+        {% endfor %}
+    </div>
+    {% endif %}
+</main>
+{% endblock %}

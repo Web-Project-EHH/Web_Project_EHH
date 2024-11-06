@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    {% macro load_header(user=None) %}
+        <header>
+            <h1>Welcome to the Forum</h1>
+            <nav>
+                <ul>
+                    <a href="/"><li>Home</li></a>
+                    <a href="/categories/"><li>Categories</li></a>
+                    <a href="/topics/"><li>Topics</li></a>
+                    <a href="/users/"><li>Users</li></a>
+                    {% if user %}
+                    <li>Hello, <a href="/users/me/">{{ user.username }}</a></li>
+                    <form action="/users/logout" method="post" style="display:inline;">
+                        <button id="logout_button" type="submit">Logout</button>
+                    </form>
+                    {% else %}
+                        <a href="/users/register"><li>Register</li></a>
+                        <a href="/users/login"><li>Login</li></a>
+                    {% endif %}
+                </ul>
+            </nav>
+        </header>
+    {% endmacro %}
+
+    {% macro load_footer() %}
+        <footer>
+            <p>&copy; Forum. All rights reserved.</p>
+        </footer>
+    {% endmacro %}
+
+    {% macro load_categories(categories=None, user=None, page=None, total_pages=None) %}
+        {% if user %}
+         <section id="categories">
+            {% if categories %}
+             <h2>Categories</h2>
+                   <table>
+                       <tr>
+                            <th>Name</th>
+                        </tr>
+                        {% for category in categories %}
+                        <tr>
+                            <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                {% else %}
+                    <p> {{ error }} </p>
+                {% endif %}
+        </section>
+            {% if user.is_admin %}
+            <div id="create_category">
+                <form id='create_category_button' action="/categories/create" method="get">
+                    <button type="submit">Create New Category</button>
+                </form>
+            </div>
+            {% endif %}
+            <section id="pagination">
+                <div>
+                    {% if page > 1 %}
+                        <a href="/categories?page={{ page - 1 }}">Previous</a>
+                    {% endif %}
+                    <span>Page {{ page }} of {{ total_pages }}</span>
+                    {% if page < total_pages %}
+                        <a href="/categories?page={{ page + 1 }}">Next</a>
+                    {% endif %}
+                </div>
+            </section>
+        {% else %}
+            <p>You must be logged in to view categories.</p>
+        {% endif %}
+    {% endmacro %}
+
+
+    {% macro load_profile(user=None) %}
+        <section id="profile">
+            <h2>{{ user.username }}</h2>
+            <p>{{ user.email }}</p>
+            <p>{{ user.first_name }} {{ user.last_name }}</p>
+        </section>
+    {% endmacro %}
+
+    {% macro load_topics(topics=None, user=None) %}
+        <section id="topic">
+            {% if topics %}
+                {% if user %}
+                <table>
+                    <tr>
+                        <th>Title</th>
+                        <th>Created By</th>
+                    </tr>
+                    {% for topic in topics %}
+                    <tr>
+                        <td><a href="/topics/{{ topic.id }}/">{{ topic.title }}</a></td>
+                        <td><a href="/users/{{ topic.user_id }}/">{{ get_user_by_id(topic.user_id).username }}</a></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+            {% else %}
+                <p>No topic found.</p>
+            {% endif %}
+        </section>
+    {% endmacro %}
+
+</body>
+</html>

@@ -1,9 +1,9 @@
-from fastapi import HTTPException
+from fastapi import Form
 from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
 from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
-from data.models.topic import Topic, TopicCategoryResponseUser, TopicCategoryResponseAdmin, TopicCategoryResponseUser
+from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
 from data.models.user import User
 
 
@@ -128,7 +128,7 @@ def delete(category_id: int, delete_topics: bool = False) ->  str | None:
     delete_from_replies = None
     delete_from_topics = None
     
-    if delete_topics == True and topics == True: # If delete topics was selected, check if any exist and then delete them
+    if delete_topics and topics: # If delete topics was selected, check if any exist and then delete them
 
         delete_from_replies = update_query('''DELETE FROM replies
                         WHERE topic_id IN (SELECT t.topic_id 
@@ -317,7 +317,7 @@ def privatise_unprivatise(category_id: int) -> str | None:
 def get_by_id(category_id: int, current_user: User):
 
     if not exists(category_id):
-        raise NotFoundException(detail='Category does not exist')
+        return None
     
     if current_user.is_admin:
         
@@ -327,8 +327,8 @@ def get_by_id(category_id: int, current_user: User):
         topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
                         WHERE category_id = ?''', (category_id,))
         
-        return {'Category': Category.from_query_result(*category[0] if category else 'No categories'), 
-            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else 'No topics'}
+        return {'Category': Category.from_query_result(*category[0] if category else None), 
+            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else None}
         
     else:
         category = read_query('''SELECT category_id, name FROM categories
@@ -339,8 +339,8 @@ def get_by_id(category_id: int, current_user: User):
             topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
                         WHERE is_locked = 0 AND category_id = ?''', (category_id,))
     
-            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else 'No categories', 
-                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else 'No topics'}
+            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
+                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
         
 
 def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_user: User) -> bool:
@@ -449,3 +449,22 @@ def get_privileged_users(category_id: int) -> List[User]:
             } 
             for user in privileged_users
     ]
+
+def count_all_categories(current_user: User) -> int:
+    query = '''SELECT COUNT(*) FROM categories WHERE 1=1'''
+
+    if not current_user:
+        return 0
+
+    if not current_user.is_admin:
+        query += ''' AND is_private = ?'''
+        params = [0]
+    else:
+        params = []
+
+    total_count = read_query(query, tuple(params))
+    
+    return total_count[0][0] if total_count else 0
+
+def category_create_form(name: str = Form(...), is_locked: bool = Form(False), is_private: bool = Form(False)):
+    return CategoryCreate(name=name, is_locked=is_locked, is_private=is_private)

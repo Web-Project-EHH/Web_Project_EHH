@@ -36,8 +36,16 @@ class UserLogin(BaseModel):
     email: EmailStr
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    
 
+class UserRegistration(BaseModel):
+    username: str = Field(..., min_length=2, max_length=20)
+    password: str   
+    confirm_password: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    is_admin: bool = False
+    
 
 class UserResponse(BaseModel):
     id: Optional[int] = None

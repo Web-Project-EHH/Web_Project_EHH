@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from common import auth
-from common.responses import BadRequest, Forbidden
+from common.responses import BadRequest
 from data.models.user import TokenResponse, User, UserLogin, UserResponse
 from services import users_services
 from common.auth import oauth2_scheme
@@ -28,10 +28,10 @@ def register_user (user: UserLogin):
 @users_router.post('/login', response_model= TokenResponse)
 def login_user(data: OAuth2PasswordRequestForm = Depends()):
     user = auth.authenticate_user(data.username, data.password)
-    is_admin = user.is_admin
-    id = user.id
     if not user:
         return BadRequest('Invalid username or password')
+    is_admin = user.is_admin
+    id = user.id
     access_token = auth.create_access_token(data={'sub': user.username, 'is_admin': is_admin, "id": id})
 
     return TokenResponse(access_token=access_token, token_type='bearer')

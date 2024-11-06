@@ -1,11 +1,10 @@
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
 import common.auth
 from common import auth
 from data.models.user import User
-from services import categories_services, users_services
-from fastapi import APIRouter, Depends, HTTPException
-from common.exceptions import ConflictException, NotFoundException, BadRequestException, ForbiddenException
+from services import categories_services
+from fastapi import APIRouter, Depends
+from common.exceptions import NotFoundException, BadRequestException, ForbiddenException
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
 from fastapi import Query
@@ -25,6 +24,9 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    offset: int = Query(default=0, ge=0),
                    current_user: User = Depends(common.auth.get_current_user)) -> List[CategoryResponse] | CategoryResponse:
 
+    if not current_user:
+        raise ForbiddenException(detail='User not authenticated')
+    
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
     
