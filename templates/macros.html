@@ -52,7 +52,14 @@
                 {% else %}
                     <p> {{ error }} </p>
                 {% endif %}
-            </section>
+        </section>
+            {% if user.is_admin %}
+            <div id="create_category">
+                <form id='create_category_button' action="/categories/create" method="get">
+                    <button type="submit">Create New Category</button>
+                </form>
+            </div>
+            {% endif %}
             <section id="pagination">
                 <div>
                     {% if page > 1 %}
