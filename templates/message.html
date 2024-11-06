@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Forum</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Messages</h1>
+
+    <!-- Списък със съобщения -->
+    <div id="messages">
+        {% for message in messages %}
+            <div class="message">
+                <p><strong>From {{ message.sender_id }}:</strong> {{ message.text }}</p>
+            </div>
+        {% else %}
+            <p>No messages found</p>
+        {% endfor %}
+    </div>
+
+    <!-- Форма за изпращане на ново съобщение -->
+    <h2>Send a Message</h2>
+    <form id="messageForm">
+        <label for="receiver_id">Receiver ID:</label>
+        <input type="number" id="receiver_id" name="receiver_id" required>
+
+        <label for="text">Message:</label>
+        <textarea id="text" name="text" required></textarea>
+
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        // Функция за изпращане на ново съобщение чрез AJAX
+        document.getElementById("messageForm").onsubmit = async function(event) {
+            event.preventDefault();  // Предотвратява презареждането на страницата
+            const receiverId = document.getElementById("receiver_id").value;
+            const text = document.getElementById("text").value;
+
+            // Изпращане на заявката чрез fetch API
+            const response = await fetch("/messages/send", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    receiver_id: receiverId,
+                    text: text
+                })
+            });
+
+            if (response.ok) {
+                document.getElementById("text").value = "";  // Изчиства полето за текст
+                loadMessages();  // Обновява списъка със съобщения
+            } else {
+                alert("Error sending message");
+            }
+        };
+
+        // Функция за зареждане на съобщенията чрез AJAX
+        async function loadMessages() {
+            const response = await fetch("/api/messages/{{ current_user.user_id }}");
+            const messages = await response.json();
+
+            const messagesContainer = document.getElementById("messages");
+            messagesContainer.innerHTML = "";  // Изчиства старите съобщения
+
+            // Добавя всяко ново съобщение
+            messages.forEach(message => {
+                const messageElement = document.createElement("div");
+                messageElement.className = "message";
+                messageElement.innerHTML = `<p><strong>From ${message.sender_id}:</strong> ${message.text}</p>`;
+                messagesContainer.appendChild(messageElement);
+            });
+        }
+
+        // Автоматично обновяване на съобщенията на всеки 5 секунди
+        setInterval(loadMessages, 5000);
+        loadMessages();  // Първоначално зареждане
+    </script>
+</body>
+</html>

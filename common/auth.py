@@ -42,7 +42,7 @@ def verify_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get('sub')
         if username is None:
-            raise username
+            return username
         return payload
     except JWTError:
             raise UnauthorizedException("Could not validate credentials")

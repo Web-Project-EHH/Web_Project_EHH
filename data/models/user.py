@@ -77,6 +77,10 @@ class UserInfo(BaseModel):
             first_name=first_name,
             last_name=last_name
         )
+    
+
+class UserAuthDep(BaseModel):
+    user_id: Optional[int] = None      
 
 # class AnonymousUser(BaseModel):
 #     raise NotImplementedError
