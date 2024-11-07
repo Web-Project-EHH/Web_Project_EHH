@@ -5,5 +5,42 @@
 {% block content %}
 <main>
 {{ load_profile(get_user(request)) }}
+
+<button id="delete-user" class="btn btn-danger" data-user-id="{{ get_user(request).id }}">Delete My Account</button>
+
+<script>
+    const handleButtonClick = async (url, method, payload = {}) => {
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || 'An error occurred');
+                throw new Error('Network response was not ok');
+            }
+
+            alert('Your account has been successfully deleted.');
+            window.location.href = '/';  // Redirect after deletion
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    };
+
+    document.getElementById('delete-user').addEventListener('click', function() {
+        const userID = this.getAttribute('data-user-id');
+        
+        if (confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
+            const url = `/users/${userID}/delete`;
+            handleButtonClick(url, 'DELETE', { user_id: userID });
+        }
+    });
+
+</script>
 </main>
 {% endblock %}

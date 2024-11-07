@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 import common.auth
 from common.template_config import CustomJinja2Templates
 from data.models.user import User
-from services import categories_services
+from services import categories_services, users_services
 from fastapi import APIRouter, Depends, Request
 from common.exceptions import BadRequestException, ForbiddenException
 from data.models.category import CategoryChangeName, CategoryChangeNameID, CategoryCreate
@@ -36,6 +36,7 @@ def get_categories(category_id: Optional[int] = Query(default=None),
 
     if not current_user:
         return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
+
     
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
                                                         limit=limit, offset=offset, current_user=current_user)
@@ -55,6 +56,9 @@ def get_category_by_id(category_id: int, request: Request = None):
 
     if not current_user:
         return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
+
+    if not current_user.is_admin or users_services.check_user_access_level(current_user.id, category_id) < 1:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
 
     category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 

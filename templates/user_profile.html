@@ -5,5 +5,17 @@
 {% block content %}
 <main>
 {{ load_profile(user) }}
+
+{% if get_user(request).is_admin%}
+
+<div>
+    <a href="{{user.id}}/permissions"><button>Permissons</button></a>
+</div>
+<br>
+<button id="delete-user" class="btn btn-danger" data-user-id="{{ user.id }}">Delete User</button>
+
+
+
+{% endif %}
 </main>
 {% endblock %}
