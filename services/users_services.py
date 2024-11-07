@@ -75,3 +75,20 @@ def email_exists(email: str) -> bool:
 def get_users_by_username(username: str):
     data = read_query('SELECT * FROM users WHERE username LIKE ?', (f'%{username}%',))
     return [UserResponse.from_query_result(row) for row in data]
+
+def delete_user(user_id: int):
+    return insert_query('DELETE FROM users WHERE user_id = ?', (user_id,))
+
+def check_user_access_level(user_id: int, category_id: int) -> int:
+    data = read_query('SELECT write_access FROM users_categories_permissions WHERE user_id = ? AND category_id = ?', (user_id, category_id))
+    if not data:
+        return 2
+    return data[0][0]
+
+def update_user_permissions(user_id: int, category_id: int, access_level: int):
+    has_entry = read_query('SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?', (user_id, category_id))
+
+    if not has_entry:
+        return insert_query('INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)', (user_id, category_id, access_level))
+
+    return insert_query('UPDATE users_categories_permissions SET write_access = ? WHERE user_id = ? AND category_id = ?', (access_level, user_id, category_id))

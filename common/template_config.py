@@ -7,6 +7,7 @@ class CustomJinja2Templates(Jinja2Templates):
         super().__init__(directory=directory)
         self.env.globals['get_user'] = self.get_user_from_request
         self.env.globals['get_user_by_id'] = users_services.get_user_by_id
+        self.env.globals['check_access'] = users_services.check_user_access_level
 
     def get_user_from_request(self, request):
         return get_current_user(request.cookies.get('token'))
