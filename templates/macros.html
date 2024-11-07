@@ -78,28 +78,42 @@
         </section>
     {% endmacro %}
 
-    {% macro load_topics(topics=None, user=None) %}
-        <section id="topic">
-            {% if topics %}
-                {% if user %}
-                <table>
-                    <tr>
-                        <th>Title</th>
-                        <th>Created By</th>
-                    </tr>
-                    {% for topic in topics %}
-                    <tr>
-                        <td><a href="/topics/{{ topic.id }}/">{{ topic.title }}</a></td>
-                        <td><a href="/users/{{ topic.user_id }}/">{{ get_user_by_id(topic.user_id).username }}</a></td>
-                    </tr>
-                    {% endfor %}
-                </table>
-                {% endif %}
-            {% else %}
-                <p>No topic found.</p>
+    {% macro load_topics(topics=None, user=None, page=None, total_pages=None) %}
+    <section id="topic">
+        {% if topics %}
+            {% if user %}
+            <table>
+                <tr>
+                    <th>Title</th>
+                    <th>Created By</th>
+                </tr>
+                {% for topic in topics %}
+                <tr>
+                    <td><a href="/topics/{{ topic.id }}/">{{ topic.title }}</a></td>
+                    <td><a href="/users/{{ topic.user_id }}/">{{ get_user_by_id(topic.user_id).username }}</a></td>
+                </tr>
+                {% endfor %}
+            </table>
             {% endif %}
+        {% else %}
+            <p>No topic found.</p>
+        {% endif %}
+    </section>
+    
+    {% if total_pages > 1 %}
+        <section id="pagination">
+            <div>
+                {% if page > 1 %}
+                    <a href="/topics?page={{ page - 1 }}">Previous</a>
+                {% endif %}
+                <span>Page {{ page }} of {{ total_pages }}</span>
+                {% if page < total_pages %}
+                    <a href="/topics?page={{ page + 1 }}">Next</a>
+                {% endif %}
+            </div>
         </section>
-    {% endmacro %}
+    {% endif %}
+{% endmacro %}
 
 </body>
 </html>

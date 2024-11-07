@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
-from data.models.category import Category
+# from data.models.category import Category
 from services import topics_services
 from typing import Optional, List
 import common.auth
@@ -51,26 +51,28 @@ def get_topics(
 @router.get('/{topic_id}', response_model=None)
 def get_topic_replies(
     request: Request,
-    topic_id: int,
-    current_user: User = Depends(common.auth.get_current_user)
-):
+    topic_id: int
+    ):
     """
     GET /topics/{topic_id}
     Fetches the details of a specific topic including its replies.
     """
+    current_user = common.auth.get_current_user(request.cookies.get('token'))
 
     token = request.cookies.get('token')
     
-    # Получаване на данните за темата и коментарите
     topic = topics_services.fetch_topic_by_id(topic_id)
 
-    replies = get_replies(topic_id=topic_id)  # Функция за извличане на отговори по ID на темата
+    replies = get_replies(topic_id=topic_id)
 
     if not topic:
         raise NotFoundException(detail='Topic not found')
+    
+    if not replies:
+        return []
 
     return templates.TemplateResponse(
-        name='single_topic.html',
+        name='single-topic.html',
         
         context={
             'topic': topic, 
@@ -80,8 +82,6 @@ def get_topic_replies(
             'request': request
         },
     )
-
-
 
 
 #WORKS
@@ -157,7 +157,7 @@ def update_topic_best_reply(topic_id: int, topic_update: TopicBestReplyUpdate, c
 
 #WORKS    
 @router.patch('/{topic_id}/locking')
-def lock_topic(topic_id: int, user: User = Depends(common.auth.get_current_user)):
+def lock_topic(topic_id: int, request: Request = None):
     """
     PATCH /topics/{topic_id}/locking
     Locks or unlocks a topic.
@@ -169,6 +169,8 @@ def lock_topic(topic_id: int, user: User = Depends(common.auth.get_current_user)
     - 403 Forbidden: User is not allowed to lock the topic.
     - 404 Not Found: Topic does not exist.
     """
+    user = common.auth.get_current_user(request.cookies.get('token'))
+
     topic = topics_services.fetch_topic_by_id(topic_id)
 
     if not topic:
@@ -182,5 +184,5 @@ def lock_topic(topic_id: int, user: User = Depends(common.auth.get_current_user)
 
     topics_services.lock_or_unlock_topic(topic_id, new_lock_status)
 
-    return {"message": f"Topic {topic_id} is {'locked' if new_lock_status else 'unlocked'}"}
+    return 
 

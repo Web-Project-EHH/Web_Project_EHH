@@ -1,20 +1,33 @@
 {% extends "base.html" %}
 {% block title %}{{ topic.title }}{% endblock %}
 {% block content %}
+<main>
     <section id="topic-details">
         <h2>{{ topic.title }}</h2>
-        <p>Created by User ID: {{ topic.user_id }}</p>
+        <p>Created by: {{ get_user_by_id(topic.user_id).username if get_user_by_id(topic.user_id) else "Unknown User" }}</p>
         <p>Category ID: {{ topic.category_id }}</p>
-        <p>Is Locked: {{ topic.is_locked }}</p>
 
         <h3>Replies</h3>
-        <ul>
-            {% for reply in replies %}
-                <li>
+        
+        {% set valid_replies_count = 0 %}
+        {% for reply in replies %}
+            {% if reply.text and reply.text.strip() and reply.user_id %}
+                {% set valid_replies_count = valid_replies_count + 1 %}
+                <div class="reply">
                     <p>{{ reply.text }}</p>
-                    <p>Posted by User ID: {{ reply.user_id }}</p>
-                </li>
-            {% endfor %}
-        </ul>
+                    <p>Posted by User: 
+                        {{ get_user_by_id(reply.user_id).username if get_user_by_id(reply.user_id) else "Unknown User" }}
+                    </p>
+                </div>
+            {% endif %}
+        {% endfor %}
+        
+        {% if valid_replies_count == 0 %}
+            <p></p>
+        {% endif %}
+        
+        
+        
     </section>
+</main>
 {% endblock %}

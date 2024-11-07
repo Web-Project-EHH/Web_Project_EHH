@@ -1,7 +1,11 @@
 from __future__ import annotations
-from fastapi import Query
+from fastapi import HTTPException, Query, Request
 from data.models.topic import TopicResponse, TopicCreate
 from data.database import read_query, update_query, insert_query
+import common.auth
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 DEFAULT_BEST_REPLY_NONE = None
@@ -87,22 +91,41 @@ def fetch_topic_by_id(topic_id: int) -> TopicResponse | None:
 #WORKS
 def create_new_topic(topic: TopicCreate, user_id: int):
     """
-    Creates a new topic if the user and category exist.
+    Creates a new topic with the provided data.
+    Parameters:
+    - topic: TopicCreate - the data for the new topic
+    - user_id: int - the ID of the user creating the topic
+    Returns:
+    - dict: status and message
+    New topic and first reply are created successfully.
     """
-    existing_user = read_query('''SELECT 1 FROM users WHERE user_id = ?''', (user_id,))
-    if not existing_user:
-        return 'User does not exist'
-    
-    existing_category = read_query('''SELECT 1 FROM categories WHERE category_id = ?''', (topic.category_id,))
+    existing_category = read_query('''SELECT 1 FROM categories WHERE category_id = ? LIMIT 1''', (topic.category_id,))
     if not existing_category:
-        return 'Category does not exist'
-    
-    insert_query(
-        '''INSERT INTO topics(title, user_id, is_locked, best_reply_id, category_id) VALUES(?,?,?,?,?)''',
-        (topic.title, user_id, 0, DEFAULT_BEST_REPLY_NONE, topic.category_id)
-    )
-    
-    return 'Topic created successfully'
+        raise HTTPException(status_code=404, detail="Category does not exist")
+
+    try:        
+        topic_id = insert_query(
+            '''INSERT INTO topics(title, user_id, is_locked, best_reply_id, category_id) 
+               VALUES(?,?,?,?,?)''',
+            (topic.title, user_id, 0, None, topic.category_id)
+        )
+        
+        if not topic_id:
+            raise HTTPException(status_code=500, detail="Topic creation failed")
+
+        reply_id = insert_query(
+            '''INSERT INTO replies(text, user_id, topic_id, edited) 
+               VALUES(?,?,?,?)''',
+            (topic.text, user_id, topic_id, 0)
+        )
+
+        if not reply_id:
+            raise HTTPException(status_code=500, detail="First reply creation failed")
+
+        return {'status': 'success', 'message': 'Topic and first reply created successfully'}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during topic creation: {str(e)}")
     
 
 #WORKS
@@ -179,3 +202,25 @@ def verify_topic_owner(user_id: int, topic_id: int):
     if not data:
         return False
     return True
+
+
+#WORKS
+def count_all_topics():
+    """
+    Counts the total number of topics.
+    """
+    data = read_query('''SELECT COUNT(*) FROM topics''')
+    return data[0][0] if data else 0
+
+
+#WORKS
+def delete_topic(topic_id: int):
+    """
+    Deletes a topic by its ID.
+    """
+
+    update_query('''DELETE FROM replies WHERE topic_id = ?''', (topic_id,))
+
+    update_query('''DELETE FROM topics WHERE topic_id = ?''', (topic_id,))
+
+    return f"Topic {topic_id} deleted successfully"
