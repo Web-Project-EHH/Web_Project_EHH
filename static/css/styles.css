@@ -207,8 +207,8 @@ section#unauthorized p {
 }
 
 #pagination {
-    margin-top: auto; /* Pushes the pagination to the bottom */
-    text-align: center; /* Center-align the pagination links */
+    margin-top: 2rem; /* Adjusted spacing for pagination */
+    text-align: center;
 }
 
 #pagination a {
@@ -274,4 +274,3 @@ section#unauthorized p {
     text-align: center;
     margin-top: 20px;
 }
-

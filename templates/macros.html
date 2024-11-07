@@ -14,6 +14,7 @@
                     <a href="/"><li>Home</li></a>
                     <a href="/categories/"><li>Categories</li></a>
                     <a href="/topics/"><li>Topics</li></a>
+                    <a href="/users/"><li>Users</li></a>
                     {% if user %}
                     <li>Hello, <a href="/users/me/">{{ user.username }}</a></li>
                     <form action="/users/logout" method="post" style="display:inline;">
@@ -52,7 +53,14 @@
                 {% else %}
                     <p> {{ error }} </p>
                 {% endif %}
-            </section>
+        </section>
+            {% if user.is_admin %}
+            <div id="create_category">
+                <form id='create_category_button' action="/categories/create" method="get">
+                    <button type="submit">Create New Category</button>
+                </form>
+            </div>
+            {% endif %}
             <section id="pagination">
                 <div>
                     {% if page > 1 %}

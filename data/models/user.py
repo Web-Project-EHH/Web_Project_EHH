@@ -47,7 +47,6 @@ class UserRegistration(BaseModel):
     is_admin: bool = False
     
 
-
 class UserResponse(BaseModel):
     id: Optional[int] = None
     username: str = Field(..., min_length=2, max_length=20)

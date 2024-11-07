@@ -71,3 +71,7 @@ def get_registration(username: str = Form(...), password: str = Form(...), confi
 def email_exists(email: str) -> bool:
     user = read_query('''SELECT email FROM users WHERE email = ?''', (email,))
     return bool(user)
+
+def get_users_by_username(username: str):
+    data = read_query('SELECT * FROM users WHERE username LIKE ?', (f'%{username}%',))
+    return [UserResponse.from_query_result(row) for row in data]

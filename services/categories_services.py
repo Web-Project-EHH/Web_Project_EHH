@@ -1,3 +1,4 @@
+from fastapi import Form
 from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
 from typing import List
@@ -464,3 +465,6 @@ def count_all_categories(current_user: User) -> int:
     total_count = read_query(query, tuple(params))
     
     return total_count[0][0] if total_count else 0
+
+def category_create_form(name: str = Form(...), is_locked: bool = Form(False), is_private: bool = Form(False)):
+    return CategoryCreate(name=name, is_locked=is_locked, is_private=is_private)

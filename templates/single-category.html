@@ -33,6 +33,11 @@
         {% else %}
         <p>You need to be logged in to view this category.</p>
         {% endif %}
+        <div id="create_topic">
+            <form id='create_topic_button' action="/topics/create" method="get">
+                <button type="submit">Create New Topic</button>
+            </form>
+        </div>
     </section>
 
     <script>

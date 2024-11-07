@@ -1,5 +1,5 @@
 import math
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 import common.auth
 from common.template_config import CustomJinja2Templates
 from data.models.user import User
@@ -14,6 +14,10 @@ from mariadb import IntegrityError
 
 router = APIRouter(prefix='/categories', tags=['Categories'])
 templates = CustomJinja2Templates(directory="templates")
+
+@router.get('/create', response_model=None)
+def create_category_page(request: Request):
+    return templates.TemplateResponse(name='create-category.html', request=request)
 
 @router.get('/', response_model=None)
 def get_categories(category_id: Optional[int] = Query(default=None), 
@@ -60,12 +64,17 @@ def get_category_by_id(category_id: int, request: Request = None):
     return templates.TemplateResponse(name='single-category.html', context={'category': category['Category'], 'topics': category['Topics']}, request=request)
 
 
-@router.post('/', response_model=None)
-def create_category(category: CategoryCreate, admin: User = Depends(common.auth.get_current_admin_user), request: Request = None):
+@router.post('/create', response_model=None)
+def create_category(category: CategoryCreate = Depends(categories_services.category_create_form), request: Request = None):
+
+    user = common.auth.get_current_user(request.cookies.get('token'))
+    
+    if not user.is_admin:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
 
     new_category = categories_services.create(category)
 
-    return templates.TemplateResponse(name='single-category.html', context={'category': new_category}, request=request)
+    return RedirectResponse(url=f"/categories/{new_category.id}", status_code=303)
 
 
 @router.patch('/', response_model=None)
