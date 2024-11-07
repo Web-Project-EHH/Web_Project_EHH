@@ -1,19 +1,30 @@
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
+from fastapi.responses import RedirectResponse, JSONResponse
 # from data.models.category import Category
 from services import topics_services
 from typing import Optional, List
 import common.auth
-from common.exceptions import NotFoundException, UnauthorizedException
+from common.exceptions import BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException
 from services.categories_services import get_by_id, is_private
 from data.models.topic import TopicCreate, TopicBestReplyUpdate, TopicResponse
-from services.topics_services import fetch_all_topics, verify_topic_owner, fetch_topic_by_id
+from services.topics_services import fetch_all_topics, verify_topic_owner, fetch_topic_by_id, topic_create_form
 from common.template_config import CustomJinja2Templates
 from data.models.user import User
 from services.replies_services import get_replies
+from mariadb import IntegrityError
 
 
 router = APIRouter(prefix='/topics',tags=['Topics'])
 templates = CustomJinja2Templates(directory="templates")
+
+
+@router.get('/create', response_model=None)
+def create_topic_page(request: Request):
+    return templates.TemplateResponse(
+        name='create-topic.html',
+        request=request
+    )
+
 
 @router.get('/', response_model=None)
 def get_topics(
@@ -83,37 +94,45 @@ def get_topic_replies(
         },
     )
 
-
-#WORKS
-@router.post('/')
-def create_topic(new_topic: TopicCreate, user: User = Depends(common.auth.get_current_user)):
+## testvam v moemnta - tr da se opravqt komentarite.
+@router.post('/create', response_model=None)
+def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_form), request: Request = None):
     """
-    POST /topics
-    Creates a new topic.
+    POST /topics/create
+    Creates a new topic and renders the appropriate HTML template.
     Parameters:
     - `new_topic` (TopicCreate): New topic details.
-    - `user` (UserAuthDep): Current user details.
+    - `request` (Request): Request object.
     Returns:
-    - 201 Created: Topic created successfully.
-    - 400 Bad Request: User does not exist or category does not exist.
+    - Redirects to the newly created topic page on success.
+    - Renders an error page if the creation fails.
     """
-    
-    topic = topics_services.create_new_topic(new_topic, user.id)
+    user = common.auth.get_current_user(request.cookies.get('token'))
 
-    if topic == 'User does not exist':
-        raise HTTPException(
-            status_code=400,
-            detail='User does not exist'
-        )
-    
-    if topic == 'Category does not exist':
-        raise HTTPException(
-            status_code=400,
-            detail='Category does not exist'
-        )
-    
-    return HTTPException(status_code=201, detail='Topic created successfully')
+    if user is None:
+        return templates.TemplateResponse(name='topics.html', context={'error': 'User not authorised'}, request=request)
 
+    try:
+        topic_data = topics_services.create_new_topic(new_topic, user.id)
+        
+        if "topic_id" not in topic_data:
+            raise HTTPException(status_code=500, detail="topic_id was not returned by create_new_topic")
+
+
+        if topic_data == 'User does not exist':
+            return templates.TemplateResponse("error.html", {"request": request, "message": "User does not exist"})
+        
+        if topic_data == 'Category does not exist':
+            return templates.TemplateResponse("error.html", {"request": request, "message": "Category does not exist"})
+        
+        return RedirectResponse(url=f"/topics/{topic_data['topic_id']}", status_code=303)
+    
+    except HTTPException as http_exc:
+        return templates.TemplateResponse("error.html", {"request": request, "message": http_exc.detail})
+
+    except Exception as exc:
+        return templates.TemplateResponse("error.html", {"request": request, "message": "An unexpected erroro ccurred."})
+    
 
 #WORKS
 @router.patch('/{topic_id}/best_reply')
@@ -131,6 +150,7 @@ def update_topic_best_reply(topic_id: int, topic_update: TopicBestReplyUpdate, c
     - 403 Forbidden: User is not allowed to set the best reply.
     - 404 Not Found: Topic or reply does not exist.
     """
+
     if not topic_update.best_reply_id:
         raise HTTPException(status_code=400, detail='No best reply id provided')
 
@@ -177,7 +197,6 @@ def lock_topic(topic_id: int, request: Request = None):
         raise HTTPException(status_code=404, detail='Topic does not exist')
 
     if not user.is_admin:
-        # and topic.user_id != user.id:
         raise HTTPException(status_code=403, detail='You are not allowed to lock this topic')
 
     new_lock_status = not topic.is_locked
@@ -186,3 +205,23 @@ def lock_topic(topic_id: int, request: Request = None):
 
     return 
 
+@router.delete('/{topic_id}', response_model=None)
+def delete_topic(topic_id: int, request: Request = None):
+
+    user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not user.is_admin:
+        return templates.TemplateResponse(name='topics.html', context={'error': 'User not authorised'}, request=request)
+
+    try:
+
+        result = topics_services.delete_topic(topic_id)
+
+        if not result:
+            raise BadRequestException(detail='Topic could not be deleted')
+        
+        elif result == f"Topic {topic_id} deleted successfully":
+            return JSONResponse({'message': 'Topic deleted successfully'}, status_code=200)
+        
+    except IntegrityError:
+        raise ForbiddenException(detail='Topic could not be deleted')

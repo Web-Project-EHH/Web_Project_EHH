@@ -1,12 +1,12 @@
 {% extends "base.html" %}
+{% from "macros.html" import load_topics %}
 {% block title %}Topics{% endblock %}
 {% block content %}
-    <section id="topics">
-        <h2>Topics</h2>
-        <ul>
-            {% for topic in topics %}
-                <li><a href="{{ url_for('get_topic_replies', topic_id=topic.topic_id) }}">{{ topic.title }}</a></li>
-            {% endfor %}
-        </ul>
-    </section>
+<main>
+    {% if topics %}
+        {{ load_topics(topics=topics, user=get_user(request)) }}
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+</main>
 {% endblock %}

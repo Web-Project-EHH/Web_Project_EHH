@@ -86,42 +86,33 @@
         </section>
     {% endmacro %}
 
-    {% macro load_topics(topics=None, user=None, page=None, total_pages=None) %}
-    <section id="topic">
-        {% if topics %}
-            {% if user %}
-            <table>
-                <tr>
-                    <th>Title</th>
-                    <th>Created By</th>
-                </tr>
-                {% for topic in topics %}
-                <tr>
-                    <td><a href="/topics/{{ topic.id }}/">{{ topic.title }}</a></td>
-                    <td><a href="/users/{{ topic.user_id }}/">{{ get_user_by_id(topic.user_id).username }}</a></td>
-                </tr>
-                {% endfor %}
-            </table>
+    {% macro load_topics(topics=None, user=None) %}
+    {% if user %}
+        <section id="topics">
+            {% if topics %}
+                <h2>Topics</h2>
+                <table>
+                    <tr>
+                        <th>Title</th>
+                    </tr>
+                    {% for topic in topics %}
+                    <tr>
+                        <td><a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No topics available.</p>
             {% endif %}
-        {% else %}
-            <p>No topic found.</p>
-        {% endif %}
-    </section>
-    
-    {% if total_pages > 1 %}
-        <section id="pagination">
-            <div>
-                {% if page > 1 %}
-                    <a href="/topics?page={{ page - 1 }}">Previous</a>
-                {% endif %}
-                <span>Page {{ page }} of {{ total_pages }}</span>
-                {% if page < total_pages %}
-                    <a href="/topics?page={{ page + 1 }}">Next</a>
-                {% endif %}
-            </div>
         </section>
+        {% if user.is_admin %}
+        <div id="create-topic">
+            <form id='create_topic_button' action="/topics/create" method="get">
+                <button type="submit">Create New Topic</button>
+            </form>
+        </div>
+        {% endif %}
+    {% else %}
+        <p>You must be logged in to view topics.</p>
     {% endif %}
 {% endmacro %}
-
-</body>
-</html>

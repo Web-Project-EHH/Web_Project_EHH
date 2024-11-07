@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fastapi import HTTPException, Query, Request
+from fastapi import Form, HTTPException, Query, Request
 from data.models.topic import TopicResponse, TopicCreate
 from data.database import read_query, update_query, insert_query
 import common.auth
@@ -122,7 +122,11 @@ def create_new_topic(topic: TopicCreate, user_id: int):
         if not reply_id:
             raise HTTPException(status_code=500, detail="First reply creation failed")
 
-        return {'status': 'success', 'message': 'Topic and first reply created successfully'}
+        return {
+            "topic_id": topic_id,
+            "status": "success",
+            "message": "Topic and first reply created successfully"
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during topic creation: {str(e)}")
@@ -219,8 +223,16 @@ def delete_topic(topic_id: int):
     Deletes a topic by its ID.
     """
 
+    
     update_query('''DELETE FROM replies WHERE topic_id = ?''', (topic_id,))
 
     update_query('''DELETE FROM topics WHERE topic_id = ?''', (topic_id,))
 
     return f"Topic {topic_id} deleted successfully"
+
+#testvam go
+def topic_create_form(title: str = Form(...), text: str = Form(...), category_id: int = Form(...)) -> TopicCreate:
+    """
+    Form for creating a new topic.
+    """
+    return TopicCreate(title=title, text=text, category_id=category_id)
