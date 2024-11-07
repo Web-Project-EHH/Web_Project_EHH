@@ -1,5 +1,6 @@
 from __future__ import annotations
 from fastapi import Form, HTTPException, Query, Request
+from data.models.reply import Reply
 from data.models.topic import TopicResponse, TopicCreate
 from data.database import read_query, update_query, insert_query
 import common.auth
@@ -158,15 +159,14 @@ def fetch_replies_for_topic(topic_id: int):
     Fetches all replies for a specific topic.
     """
     data = read_query(
-        '''SELECT r.reply_id, r.text, r.user_id, u.username, r.topic_id, r.created
+        '''SELECT r.reply_id, r.text, r.user_id, r.topic_id, r.created, r.edited
         FROM replies r
-        JOIN users u ON r.user_id = u.user_id
         WHERE r.topic_id = ?''',
         (topic_id,)
     )
     
-    return data if data else []
-
+    return [Reply.from_query_result(*row) for row in data]
+# korekcii gore.
 
 #WORKS
 def check_topic_access_permissions(user_id: int, topic_id: input):
@@ -232,7 +232,4 @@ def delete_topic(topic_id: int):
 
 #testvam go
 def topic_create_form(title: str = Form(...), text: str = Form(...), category_id: int = Form(...)) -> TopicCreate:
-    """
-    Form for creating a new topic.
-    """
     return TopicCreate(title=title, text=text, category_id=category_id)

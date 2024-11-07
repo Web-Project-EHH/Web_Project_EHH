@@ -7,7 +7,7 @@ import common.auth
 from common.exceptions import BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException
 from services.categories_services import get_by_id, is_private
 from data.models.topic import TopicCreate, TopicBestReplyUpdate, TopicResponse
-from services.topics_services import fetch_all_topics, verify_topic_owner, fetch_topic_by_id, topic_create_form
+from services.topics_services import fetch_all_topics, fetch_replies_for_topic, verify_topic_owner, fetch_topic_by_id, topic_create_form
 from common.template_config import CustomJinja2Templates
 from data.models.user import User
 from services.replies_services import get_replies
@@ -74,17 +74,14 @@ def get_topic_replies(
     
     topic = topics_services.fetch_topic_by_id(topic_id)
 
-    replies = get_replies(topic_id=topic_id)
-
     if not topic:
         raise NotFoundException(detail='Topic not found')
     
-    if not replies:
-        return []
+    replies = topics_services.fetch_replies_for_topic(topic_id)
+
 
     return templates.TemplateResponse(
         name='single-topic.html',
-        
         context={
             'topic': topic, 
             'replies': replies, 
@@ -175,7 +172,7 @@ def update_topic_best_reply(topic_id: int, topic_update: TopicBestReplyUpdate, c
         raise HTTPException(status_code=404, detail='Reply does not exist') 
     
 
-#WORKS    
+#not working
 @router.patch('/{topic_id}/locking')
 def lock_topic(topic_id: int, request: Request = None):
     """
@@ -205,6 +202,8 @@ def lock_topic(topic_id: int, request: Request = None):
 
     return 
 
+
+#WORKS
 @router.delete('/{topic_id}', response_model=None)
 def delete_topic(topic_id: int, request: Request = None):
 
