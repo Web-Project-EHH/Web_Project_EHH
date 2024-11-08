@@ -27,6 +27,12 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    limit: int = Query(default=10, ge=1),
                    offset: int = Query(default=0, ge=0), request: Request = None,
                    page: int = Query(default=1, ge=1)):
+    
+    
+    current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not current_user:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
 
     token = request.cookies.get('token')
     current_user = common.auth.get_current_user(token)
@@ -34,9 +40,6 @@ def get_categories(category_id: Optional[int] = Query(default=None),
     total_categories = len(categories_services.get_categories(current_user, limit=10000))
     print(total_categories)
     total_pages = math.ceil(total_categories / limit)
-
-    if not current_user:
-        return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
 
     
     categories = categories_services.get_categories(category_id=category_id,name=name,sort_by=sort_by,sort=sort,
