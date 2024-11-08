@@ -5,7 +5,10 @@
         <h2>Replies</h2>
         <ul>
             { for reply in replies }
-                <li>{{ reply.content }}</li>
+                <li>
+                    <!-- Показваме reply_id и текст -->
+                    <strong>ID:</strong> {{ reply.reply_id }} - <strong>Content:</strong> {{ reply.content }}
+                </li>
             { endfor }
         </ul>
     </section>

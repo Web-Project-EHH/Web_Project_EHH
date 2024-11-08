@@ -87,27 +87,32 @@
     {% endmacro %}
 
     {% macro load_topics(topics=None, user=None) %}
-        <section id="topic">
+    {% if user %}
+        <section id="topics">
             {% if topics %}
-                {% if user %}
+                <h2>Topics</h2>
                 <table>
                     <tr>
                         <th>Title</th>
-                        <th>Created By</th>
                     </tr>
                     {% for topic in topics %}
                     <tr>
-                        <td><a href="/topics/{{ topic.id }}/">{{ topic.title }}</a></td>
-                        <td><a href="/users/{{ topic.user_id }}/">{{ get_user_by_id(topic.user_id).username }}</a></td>
+                        <td><a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a></td>
                     </tr>
                     {% endfor %}
                 </table>
-                {% endif %}
             {% else %}
-                <p>No topic found.</p>
+                <p>No topics available.</p>
             {% endif %}
         </section>
-    {% endmacro %}
-
+        <div id="create-topic">
+            <form id='create_topic_button' action="/topics/create" method="get">
+                <button type="submit">Create New Topic</button>
+            </form>
+        </div>
+    {% else %}
+        <p>You must be logged in to view topics.</p>
+    {% endif %}
+{% endmacro %}
 </body>
 </html>
