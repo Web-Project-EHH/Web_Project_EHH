@@ -105,14 +105,14 @@
                 <p>No topics available.</p>
             {% endif %}
         </section>
-        {% if user.is_admin %}
         <div id="create-topic">
             <form id='create_topic_button' action="/topics/create" method="get">
                 <button type="submit">Create New Topic</button>
             </form>
         </div>
-        {% endif %}
     {% else %}
         <p>You must be logged in to view topics.</p>
     {% endif %}
 {% endmacro %}
+</body>
+</html>

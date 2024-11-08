@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query, Request, Depends
+import re
+from fastapi import APIRouter, HTTPException, Query, Request, Depends, Form
 from fastapi.responses import RedirectResponse, JSONResponse
 # from data.models.category import Category
 from services import topics_services
@@ -17,7 +18,7 @@ from mariadb import IntegrityError
 router = APIRouter(prefix='/topics',tags=['Topics'])
 templates = CustomJinja2Templates(directory="templates")
 
-
+#WORKS
 @router.get('/create', response_model=None)
 def create_topic_page(request: Request):
     return templates.TemplateResponse(
@@ -25,7 +26,7 @@ def create_topic_page(request: Request):
         request=request
     )
 
-
+#WORKS
 @router.get('/', response_model=None)
 def get_topics(
     request: Request = None,
@@ -59,11 +60,12 @@ def get_topics(
         request=request
     )
 
+#WORKS
 @router.get('/{topic_id}', response_model=None)
 def get_topic_replies(
     request: Request,
     topic_id: int
-    ):
+):
     """
     GET /topics/{topic_id}
     Fetches the details of a specific topic including its replies.
@@ -75,10 +77,9 @@ def get_topic_replies(
     topic = topics_services.fetch_topic_by_id(topic_id)
 
     if not topic:
-        raise NotFoundException(detail='Topic not found')
+        raise HTTPException(status_code=404, detail='Topic not found')
     
     replies = topics_services.fetch_replies_for_topic(topic_id)
-
 
     return templates.TemplateResponse(
         name='single-topic.html',
@@ -91,7 +92,7 @@ def get_topic_replies(
         },
     )
 
-## testvam v moemnta - tr da se opravqt komentarite.
+#WORKS
 @router.post('/create', response_model=None)
 def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_form), request: Request = None):
     """
@@ -125,51 +126,46 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
         return RedirectResponse(url=f"/topics/{topic_data['topic_id']}", status_code=303)
     
     except HTTPException as http_exc:
-        return templates.TemplateResponse("error.html", {"request": request, "message": http_exc.detail})
+        error_message = re.sub(r"^Validation error:\s*(\w+:\s*)?", "", http_exc.detail)
+        return templates.TemplateResponse("error.html", {"request": request, "message": error_message})
 
     except Exception as exc:
-        return templates.TemplateResponse("error.html", {"request": request, "message": "An unexpected erroro ccurred."})
+        return templates.TemplateResponse("error.html", {"request": request, "message": "An unexpected error occurred."})
     
+#not working
+@router.post('/{topic_id}/best_reply', response_model=None)
+def update_topic_best_reply(
+    topic_id: int, 
+    best_reply_data: TopicBestReplyUpdate = Depends(), 
+    request: Request = None
+):
+    user = common.auth.get_current_user(request.cookies.get('token'))
 
-#WORKS
-@router.patch('/{topic_id}/best_reply')
-def update_topic_best_reply(topic_id: int, topic_update: TopicBestReplyUpdate, current_user: User = Depends(common.auth.get_current_user)):
-    """
-    PATCH /topics/{topic_id}/best_reply
-    Updates the best reply for a topic.
-    Parameters:
-    - `topic_id` (int): ID of the topic to update.
-    - `current_user` (UserAuthDep): Current user details.
-    - `topic_update` (TopicUpdate): New best reply ID.
-    Returns:
-    - 200 OK: Best reply updated successfully.
-    - 400 Bad Request: No best reply ID provided.
-    - 403 Forbidden: User is not allowed to set the best reply.
-    - 404 Not Found: Topic or reply does not exist.
-    """
-
-    if not topic_update.best_reply_id:
-        raise HTTPException(status_code=400, detail='No best reply id provided')
-
+    if user is None:
+        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'User not authorised'}, request=request)
+                   
     topic = topics_services.fetch_topic_by_id(topic_id)
 
     if not topic:
-        raise HTTPException(status_code=404, detail='Topic does not exist')
-
-    if not verify_topic_owner(current_user.id, topic_id):
-        raise HTTPException(status_code=403, detail='You are not allowed to set the best reply for this topic')
-
+        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'Topic not found'}, request=request)
+    
+    if not verify_topic_owner(user.id, topic_id):
+        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'User not authorised'}, request=request)
+    
+    best_reply_id = best_reply_data.best_reply_id
+    
     topic_replies = topics_services.fetch_replies_for_topic(topic_id)
 
     if not topic_replies:
-        raise HTTPException(status_code=404, detail='Topic does not have replies')
+        return templates.TemplateResponse(name='topics.html', context={'request': request, 'error': 'No replies found'}, request=request)
+    
+    reply_ids = [reply.id for reply in topic_replies]
 
-    reply_ids = [reply[0] for reply in topic_replies]
-
-    if topic_update.best_reply_id in reply_ids:
-        return topics_services.update_best_reply_for_topic(topic_id, topic_update.best_reply_id)
+    if best_reply_id in reply_ids:
+        topics_services.update_best_reply_for_topic(topic_id, best_reply_id)
+        return RedirectResponse(url=f"/topics/{topic_id}", status_code=303)
     else:
-        raise HTTPException(status_code=404, detail='Reply does not exist') 
+        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'Reply ID not found'}, request=request)
     
 
 #not working

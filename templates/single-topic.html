@@ -6,25 +6,34 @@
         <h2>{{ topic.title }}</h2>
         <p>Created by: {{ get_user_by_id(topic.user_id).username if get_user_by_id(topic.user_id) else "Unknown User" }}</p>
         <p>Category ID: {{ topic.category_id }}</p>
-
+    
         {% if get_user(request) and get_user(request).is_admin %}
-        <div class="topic-actions">
-            <button id="delete-topic" class="btn btn-danger" data-topic-id="{{ topic.topic_id }}">Delete Topic</button>
-        </div>
+            <div class="topic-actions">
+                <button id="delete-topic" class="btn btn-danger" data-topic-id="{{ topic.topic_id }}">Delete Topic</button>
+            </div>
         {% endif %}
-
+    
         <h3>Replies</h3>
         {% if replies %}
-            {% for reply in replies %}
-                {% if reply.text and reply.text.strip() %}
-                    <div class="reply">
-                        <p>{{ reply.text }}</p>
-                        <p>Posted by User: 
-                            {{ get_user_by_id(reply.user_id).username if get_user_by_id(reply.user_id) else "Unknown User" }}
-                        </p>
-                    </div>
-                {% endif %}
-            {% endfor %}
+            <form id="best-reply-form" method="post" action="/topics/{{ topic.topic_id }}/best_reply">
+                <select name="best_reply_id" id="best_reply_id" required>
+                    <option value="" disabled selected>Select the best reply</option>
+                    {% for reply in replies %}
+                        {% if reply.text and reply.text.strip() %}
+                            <option value="{{ reply.id }}">{{ reply.id }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <button type="submit">Set Best Reply</button>
+            </form>
+            <h4>All replies</h4>
+            <ul>
+                {% for reply in replies %}
+                    {% if reply.text and reply.text.strip() %}
+                        <li>Reply ID: {{ reply.id }} - {{ reply.text }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
         {% else %}
             <p>No replies found.</p>
         {% endif %}
@@ -68,7 +77,6 @@
         if (confirmDelete) {
             const url = `/topics/${topicId}`;
             handleButtonClick(url, 'DELETE');
-
             this.disabled = true;
         }
     });

@@ -88,7 +88,7 @@ class TopicBestReplyUpdate(BaseModel):
     It has the following fields:
     - best_reply_id: int - the id of the best reply to the topic
     """
-    best_reply_id: PositiveInt
+    best_reply_id: int
 
 
 class TopicCategoryResponseUser(BaseModel):

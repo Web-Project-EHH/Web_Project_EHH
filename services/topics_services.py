@@ -1,5 +1,6 @@
 from __future__ import annotations
 from fastapi import Form, HTTPException, Query, Request
+from pydantic import ValidationError
 from data.models.reply import Reply
 from data.models.topic import TopicResponse, TopicCreate
 from data.database import read_query, update_query, insert_query
@@ -230,6 +231,11 @@ def delete_topic(topic_id: int):
 
     return f"Topic {topic_id} deleted successfully"
 
-#testvam go
+#WORKS
 def topic_create_form(title: str = Form(...), text: str = Form(...), category_id: int = Form(...)) -> TopicCreate:
-    return TopicCreate(title=title, text=text, category_id=category_id)
+    try:
+        return TopicCreate(title=title, text=text, category_id=category_id)
+    except ValidationError as exc:
+        error_messages = "; ".join([f"{err['loc'][0]}: {err['msg']}" for err in exc.errors()])
+        raise HTTPException(status_code=400, detail=f"{error_messages}")
+
