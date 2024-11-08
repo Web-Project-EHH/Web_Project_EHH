@@ -28,14 +28,14 @@ def get_categories(current_user: User,
         a list of CategoryResponse objects if multiple results are found, or None if no results are found.
     """
     
-    query = '''SELECT c.category_id, name, is_locked, is_private FROM categories c ''' if current_user.is_admin else '''SELECT c.category_id, name FROM categories c'''
+    query = '''SELECT c.category_id, c.name, c.is_locked, c.is_private FROM categories c ''' if current_user.is_admin else '''SELECT c.category_id, c.name FROM categories c'''
     params = []
 
     if not current_user.is_admin:
         # Non-admin users can see public categories (is_private = 0)
         # and private categories where they have access (access_level > 0)
-        query += ''' LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id'''
-        query += ''' WHERE (c.is_private = 0 OR (c.is_private = 1 AND ucp.write_access > 0 AND c.category_id = ucp.category_id AND ucp.user_id = ?))'''
+        query += ''' LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id and ucp.user_id = ?'''
+        query += ''' WHERE (c.is_private = 0 OR (c.is_private = 1 AND ucp.write_access > 0))'''
         params.append(current_user.id)
     else:
         # Admins can see both public and private categories
@@ -338,12 +338,12 @@ def get_by_id(category_id: int, current_user: User):
         
     else:
         category = read_query('''SELECT category_id, name FROM categories
-                          WHERE is_private = 0 AND category_id = ?''', (category_id,))
+                          WHERE category_id = ?''', (category_id,))
         
         if category:
         
             topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
-                        WHERE is_locked = 0 AND category_id = ?''', (category_id,))
+                        WHERE category_id = ?''', (category_id,))
     
             return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
                     'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
