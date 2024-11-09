@@ -222,13 +222,28 @@ def count_all_topics():
 def delete_topic(topic_id: int):
     """
     Deletes a topic by its ID.
+    First removes best_reply reference, then deletes replies, then the topic.
     """
+    try:
+        update_query(
+            '''UPDATE topics SET best_reply_id = NULL WHERE topic_id = ?''', 
+            (topic_id,)
+        )
 
-    update_query('''DELETE FROM replies WHERE topic_id = ?''', (topic_id,))
+        update_query(
+            '''DELETE FROM replies WHERE topic_id = ?''', 
+            (topic_id,)
+        )
 
-    update_query('''DELETE FROM topics WHERE topic_id = ?''', (topic_id,))
+        update_query(
+            '''DELETE FROM topics WHERE topic_id = ?''', 
+            (topic_id,)
+        )
 
-    return f"Topic {topic_id} deleted successfully"
+        return f"Topic {topic_id} deleted successfully"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 #WORKS
 def topic_create_form(title: str = Form(...), text: str = Form(...), category_id: int = Form(...)) -> TopicCreate:
