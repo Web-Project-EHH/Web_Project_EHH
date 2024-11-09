@@ -1,5 +1,6 @@
 from typing import Optional, Literal
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import RedirectResponse
 from common.exceptions import BadRequestException
 from common.template_config import CustomJinja2Templates
 from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID
@@ -10,7 +11,7 @@ import common.auth
 
 
 
-router = APIRouter(prefix='/api/replies', tags=['Replies'])
+router = APIRouter(prefix='/replies', tags=['Replies'])
 templates = CustomJinja2Templates(directory="templates")
 
 @router.get('/', response_model=None)
@@ -43,13 +44,6 @@ def get_reply_by_id(reply_id: int, request: Request = None, current_user: User =
     return templates.TemplateResponse(name='single-reply.html', context={'reply': reply, 'user': current_user}, request=request)
     
 
-@router.post('/', response_model=Reply)
-def create_reply(reply: ReplyCreate, current_user: User = Depends(common.auth.get_current_user), request: Request = None):
-
-        reply = replies_services.create(reply, current_user)
-        
-        return templates.TemplateResponse(name='single-reply.html', context={'reply': reply, 'user': current_user}, request=request)
-
 @router.post('/{reply_id}/vote', response_model=None)
 def vote(reply_id: int, type: bool, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
     
@@ -76,9 +70,21 @@ def edit_reply(old_reply: ReplyEditID, new_reply: ReplyEdit,
 
 	return templates.TemplateResponse(name='single-reply.html', context={'reply': edited, 'user': current_user}, request=request)
 
-@router.delete('/', response_model=None)
-def delete_reply(reply_id: int, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
-    
-    deleted = replies_services.delete(reply_id, current_user)
-    
-    return templates.TemplateResponse(name='single-reply.html', context={'reply': deleted, 'user': current_user}, request=request)
+@router.delete('/{reply_id}/delete', response_model=None)
+def delete_reply(reply_id: int, request: Request):
+
+     current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+     reply = replies_services.get_reply_by_id(reply_id=reply_id)
+
+     if not current_user:
+         return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
+     
+     if not (current_user.id == reply.user_id or not current_user.is_admin):
+         return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
+     
+     replies_services.delete(reply_id, current_user)
+     
+     return RedirectResponse(url=f'/topics/{reply.topic_id}', status_code=303)
+
+

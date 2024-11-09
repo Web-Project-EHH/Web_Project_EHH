@@ -9,7 +9,7 @@
     load_categories, load_profile, load_topics %}
 </head>
 <body>
-    {% if request %}
+    {% if get_user(request) %}
     {{ load_header(get_user(request)) }}
     {% else %}
     {{ load_header() }}
