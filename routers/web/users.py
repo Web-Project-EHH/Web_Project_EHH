@@ -50,13 +50,27 @@ def get_current_user_me(request: Request):
 
 @router.get('/', response_model=None)
 def serve_users(request: Request):
+    token = request.cookies.get('token')
+    current_user = auth.get_current_user(token)
 
-    user = auth.get_current_user(request.cookies.get('token'))
-
-    if not user:
-        return templates.TemplateResponse(name="login.html", request=request, context={'error': 'You need to login to view this page'})
+    if not current_user:
+        return templates.TemplateResponse(
+            name='users.html',  # Change to users.html instead of unauthorized.html
+            context={
+                'request': request,
+                'token': token,
+                'error': 'You must be logged in to view users.'
+            }
+        )
     
-    return templates.TemplateResponse(name="users.html", request=request)
+    return templates.TemplateResponse(
+        name="users.html", 
+        context={
+            'request': request,
+            'token': token,
+            'users': None
+        }
+    )
 
 
 @router.get('/register', response_model=None)
@@ -119,10 +133,20 @@ def search_users(request: Request, username: str = Query(...)):
     current_user = auth.get_current_user(request.cookies.get('token'))
 
     if not current_user:
-        return templates.TemplateResponse(name="login.html", request=request, context={'error': 'You need to login to view this page'})
+        return templates.TemplateResponse(
+            name='unauthorized.html',  # Change to unauthorized template
+            context={
+                'request': request,
+                'error': 'You need to login to view this page'
+            }
+        )
 
     users = users_services.get_users_by_username(username)
-    return templates.TemplateResponse(request=request, name="users.html", context={'users': users})
+    return templates.TemplateResponse(
+        request=request, 
+        name="users.html", 
+        context={'users': users}
+    )
 
 @router.get('/{user_id}', response_model=None)
 def get_user_by_id(user_id: int, request: Request = None):
@@ -130,10 +154,20 @@ def get_user_by_id(user_id: int, request: Request = None):
     current_user = auth.get_current_user(request.cookies.get('token'))
 
     if not current_user:
-        return templates.TemplateResponse(name="login.html", request=request, context={'error': 'You need to login to view this page'})
+        return templates.TemplateResponse(
+            name='unauthorized.html',  # Change to unauthorized template
+            context={
+                'request': request,
+                'error': 'You need to login to view this page'
+            }
+        )
 
     user = users_services.get_user_by_id(user_id)
-    return templates.TemplateResponse(name="user_profile.html", request=request, context={'user': user})
+    return templates.TemplateResponse(
+        name="user_profile.html", 
+        request=request, 
+        context={'user': user}
+    )
 
 
 @router.post('/{user_id}/permissions')
@@ -170,3 +204,51 @@ async def update_permissions(user_id: int, request: Request):
         users_services.update_user_permissions(user_id=user_id, category_id=category_id, access_level=access_level)
 
     return RedirectResponse(url=f'/users/{user_id}/permissions', status_code=302)
+
+
+@router.post('/update-profile', response_model=None)
+async def update_profile(
+    request: Request,
+    email: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    bio: str = Form(None),
+    new_password: str = Form(None),
+    confirm_password: str = Form(None)
+):
+    current_user = auth.get_current_user(request.cookies.get('token'))
+    
+    if not current_user:
+        return templates.TemplateResponse(
+            name="login.html", 
+            context={'error': 'You need to login'}, 
+            request=request
+        )
+
+    try:
+        users_services.update_user_profile(
+            user_id=current_user.id,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            bio=bio,
+            new_password=new_password,
+            confirm_password=confirm_password
+        )
+        return templates.TemplateResponse(
+            name="profile.html",
+            context={
+                'request': request,
+                'success': 'Profile updated successfully!',
+                'user': current_user
+            }
+        )
+    except ValueError as e:
+        return templates.TemplateResponse(
+            name="profile.html", 
+            context={
+                'request': request,
+                'error': str(e),
+                'user': current_user
+            }
+        )
