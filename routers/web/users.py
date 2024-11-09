@@ -178,6 +178,7 @@ async def update_profile(
     email: str = Form(...),
     first_name: str = Form(...),
     last_name: str = Form(...),
+    bio: str = Form(None),
     new_password: str = Form(None),
     confirm_password: str = Form(None)
 ):
@@ -196,10 +197,10 @@ async def update_profile(
             email=email,
             first_name=first_name,
             last_name=last_name,
+            bio=bio,
             new_password=new_password,
             confirm_password=confirm_password
         )
-        # Redirect with success message
         return templates.TemplateResponse(
             name="profile.html",
             context={
@@ -209,7 +210,6 @@ async def update_profile(
             }
         )
     except ValueError as e:
-        # Return with error message
         return templates.TemplateResponse(
             name="profile.html", 
             context={

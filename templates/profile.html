@@ -55,6 +55,17 @@
         </div>
 
         <div>
+            <label for="bio" style="display: block; margin-bottom: 5px;">Bio:</label>
+            <textarea 
+                id="bio" 
+                name="bio" 
+                rows="4"
+                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; font-family: inherit;"
+                placeholder="Tell us about yourself..."
+            >{{ get_user(request).bio if get_user(request).bio else '' }}</textarea>
+        </div>
+
+        <div>
             <label for="new_password" style="display: block; margin-bottom: 5px;">New Password:</label>
             <input 
                 type="password" 
