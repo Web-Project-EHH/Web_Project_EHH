@@ -259,3 +259,48 @@ section#unauthorized p {
     }
 }
 
+/* Form Layout */
+#register form {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+#register label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+#register input {
+    padding: 0.25rem 0.75rem; /* Less vertical padding for a shorter input */
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%; /* Keep the same length */
+    height: auto; /* Ensures the height adjusts based on padding */
+}
+
+#register button {
+    align-self: center;
+    width: 100%; /* Makes the button the same width as the inputs */
+}
+
+/* Optional: Aligning error messages */
+#error {
+    color: red;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.reply-container {
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.reply-text {
+    white-space: pre-wrap; /* Preserves whitespace and wraps text */
+    word-wrap: break-word; /* Breaks long words to prevent overflow */
+    overflow-wrap: break-word; /* Ensures long words break */
+}

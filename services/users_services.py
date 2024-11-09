@@ -1,9 +1,11 @@
 from fastapi import Form
 from common.exceptions import NotFoundException
-from data.models.user import User, UserRegistration, UserResponse
+from data.models.user import User, UserProfileUpdate, UserRegistration, UserResponse
 from services import replies_services
-from data.database import read_query, insert_query
+from data.database import read_query, insert_query, update_query
 from data.models.vote import Vote
+import common.auth
+from mariadb import IntegrityError
 
 
 def create_user(user: User) -> int:
@@ -14,16 +16,54 @@ def create_user(user: User) -> int:
 
 
 def get_user(username: str) -> UserResponse:
-    data = read_query( 'SELECT * FROM users WHERE username=?',(username,))
+    data = read_query(
+        '''SELECT user_id, username, password, email, first_name, 
+           last_name, is_admin, is_deleted, bio 
+           FROM users WHERE username = ?''',
+        (username,)
+    )
     if not data:
         return None
-    return UserResponse.from_query_result(data[0])
+        
+    user_dict = {
+        'id': data[0][0],
+        'username': data[0][1],
+        'password': data[0][2],
+        'email': data[0][3],
+        'first_name': data[0][4],
+        'last_name': data[0][5],
+        'is_admin': bool(data[0][6]),
+        'is_deleted': bool(data[0][7]),
+        'bio': data[0][8]
+    }
+    
+    return UserResponse(**user_dict)
 
-def get_user_by_id(user_id: int) -> UserResponse:
-    data = read_query( 'SELECT * FROM users WHERE user_id=?',(user_id,))
+def get_user_by_id(user_id: int) -> User | None:
+    """Get user by ID with all fields including bio"""
+    data = read_query(
+        '''SELECT user_id as id, username, password, email, first_name, 
+           last_name, is_admin, is_deleted, bio 
+           FROM users WHERE user_id = ?''',
+        (user_id,)
+    )
+    
     if not data:
         return None
-    return UserResponse.from_query_result(data[0])
+        
+    user_dict = {
+        'id': data[0][0],
+        'username': data[0][1], 
+        'password': data[0][2],
+        'email': data[0][3],
+        'first_name': data[0][4],
+        'last_name': data[0][5],
+        'is_admin': bool(data[0][6]),
+        'is_deleted': bool(data[0][7]),
+        'bio': data[0][8]
+    }
+    
+    return User(**user_dict)
 
 
 def get_users():
@@ -92,3 +132,29 @@ def update_user_permissions(user_id: int, category_id: int, access_level: int):
         return insert_query('INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)', (user_id, category_id, access_level))
 
     return insert_query('UPDATE users_categories_permissions SET write_access = ? WHERE user_id = ? AND category_id = ?', (access_level, user_id, category_id))
+
+def update_user_profile(user_id: int, email: str, first_name: str, last_name: str, bio: str = None, new_password: str = None, confirm_password: str = None):
+    """Updates user profile information"""
+    try:
+        if new_password:
+            if not confirm_password:
+                raise ValueError("Please confirm your new password")
+            if new_password != confirm_password:
+                raise ValueError("Passwords do not match")
+            
+            hashed_password = common.auth.get_password_hash(new_password)
+            update_query(
+                '''UPDATE users 
+                   SET email = ?, first_name = ?, last_name = ?, password = ?, bio = ? 
+                   WHERE user_id = ?''',
+                (email, first_name, last_name, hashed_password, bio, user_id)
+            )
+        else:
+            update_query(
+                '''UPDATE users 
+                   SET email = ?, first_name = ?, last_name = ?, bio = ? 
+                   WHERE user_id = ?''',
+                (email, first_name, last_name, bio, user_id)
+            )
+    except IntegrityError:
+        raise ValueError("Email address already in use")

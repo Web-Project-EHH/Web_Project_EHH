@@ -13,20 +13,11 @@ class User(BaseModel):
     created_at: Optional[datetime.datetime] = None
     is_admin: bool = False
     is_deleted: bool = False
-    
+    bio: Optional[str] = None  # Add bio field
+
     @classmethod
-    def from_query_result(cls, id, username, password, email, first_name, last_name, created_at , is_admin, is_deleted):
-        return cls(
-            id=id,
-            username=username,
-            password=password,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            created_at=created_at,
-            is_admin=is_admin,
-            is_deleted=is_deleted
-        )
+    def from_query(cls, **kwargs):
+        return cls(**kwargs)
     
 
 class UserLogin(BaseModel):
@@ -48,12 +39,14 @@ class UserRegistration(BaseModel):
     
 
 class UserResponse(BaseModel):
-    id: Optional[int] = None
-    username: str = Field(..., min_length=2, max_length=20)
+    id: int
+    username: str
     email: EmailStr
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_admin: bool = False
+    is_deleted: bool = False
+    bio: Optional[str] = None
 
     @classmethod
     def from_query_result(cls, query_result):
@@ -89,6 +82,15 @@ class UserInfo(BaseModel):
 
 class UserAuthDep(BaseModel):
     user_id: Optional[int] = None      
+
+class UserProfileUpdate(BaseModel):
+    """Model for updating user profile information"""
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    bio: Optional[str] = Field(None, max_length=500)  # Limit bio length
+    new_password: Optional[str] = None
+    confirm_password: Optional[str] = None
 
 # class AnonymousUser(BaseModel):
 #     raise NotImplementedError

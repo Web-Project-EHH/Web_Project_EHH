@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Form
 from fastapi.security import OAuth2PasswordRequestForm
-from common import auth
-from common.responses import BadRequest
-from data.models.user import TokenResponse, User, UserLogin, UserResponse
+from common.exceptions import BadRequestException
+from data.models.user import User, UserLogin, UserResponse, TokenResponse
+import common.auth as auth
 from services import users_services
 from common.auth import oauth2_scheme
 
@@ -13,7 +13,7 @@ users_router = APIRouter(prefix='/api/users', tags=['Users'])
 @users_router.post('/register',  response_model= UserResponse)
 def register_user (user: UserLogin):
     if users_services.get_user(user.username):
-        return BadRequest('User already exists') 
+        return BadRequestException('User already exists') 
 
     hashed_password =  auth.get_password_hash(user.password) 
     user.password = hashed_password
@@ -22,14 +22,14 @@ def register_user (user: UserLogin):
         user.id = user_id
         return user
     else:
-        return BadRequest('User creation failed')
+        return BadRequestException('User creation failed')
 
 
 @users_router.post('/login', response_model= TokenResponse)
 def login_user(data: OAuth2PasswordRequestForm = Depends()):
     user = auth.authenticate_user(data.username, data.password)
     if not user:
-        return BadRequest('Invalid username or password')
+        return BadRequestException('Invalid username or password')
     is_admin = user.is_admin
     id = user.id
     access_token = auth.create_access_token(data={'sub': user.username, 'is_admin': is_admin, "id": id})

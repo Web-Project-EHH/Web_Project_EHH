@@ -36,32 +36,46 @@
         </footer>
     {% endmacro %}
 
-    {% macro load_categories(categories=None, user=None, page=None, total_pages=None) %}
+    {% macro load_categories(categories=None, user=None, page=None, total_pages=None, limit=None) %}
         {% if user %}
-        <section id="categories">
-            {% if categories %}
-                <h2>Categories</h2>
-                <table>
+ <section id="categories">
+    {% if categories %}
+        <h2>Categories</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+            </tr>
+            {% if is_list(categories) %}
+                {% for category in categories %}
                     <tr>
-                        <th>Name</th>
+                        <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
                     </tr>
-                    {% for category in categories %}
+                {% endfor %}
+                {% if categories|length < limit %}
+                    {% for _ in range(limit - categories|length) %}
                         <tr>
-                            <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
+                            <td><br></td>
                         </tr>
                     {% endfor %}
-                    {% if categories|length < 10 %}
-                        {% for _ in range(10 - categories|length) %}
-                            <tr>
-                                <td><br></td>
-                            </tr>
-                        {% endfor %}
-                    {% endif %}
-                </table>
+                {% endif %}
             {% else %}
-                <p> {{ error }} </p>
+                <tr>
+                    <td><a href="/categories/{{ categories.id }}/">{{ categories.name }}</a></td>
+                </tr>
+                {% for _ in range(limit - 1) %}
+                    <tr>
+                        <td><br></td>
+                    </tr>
+                {% endfor %}
             {% endif %}
-        </section>
+        </table>
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+</section>
+
+        
+        
         
             {% if user.is_admin %}
             <div id="create_category">
@@ -96,10 +110,14 @@
             <h2>{{ user.username }}</h2>
             <p>{{ user.email }}</p>
             <p>{{ user.first_name }} {{ user.last_name }}</p>
+            <div class="bio">
+                <h3>About Me</h3>
+                <p>{{ user.bio }}</p>
+            </div>
         </section>
     {% endmacro %}
 
-    {% macro load_topics(topics=None, user=None) %}
+    {% macro load_topics(topics=None, user=None, current_page=None, total_pages=None, request=None) %}
     {% if user %}
         <section id="topics">
             {% if topics %}
@@ -114,15 +132,32 @@
                     </tr>
                     {% endfor %}
                 </table>
+
+                {% if current_page and total_pages and request %}
+                <div class="pagination" style="margin-top: 20px; text-align: center;">
+                    {% if current_page > 1 %}
+                        <a href="{{ request.url.include_query_params(page=current_page-1) }}" 
+                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    <span style="margin: 0 10px;">
+                        Page {{ current_page }} of {{ total_pages }}
+                    </span>
+
+                    {% if current_page < total_pages %}
+                        <a href="{{ request.url.include_query_params(page=current_page+1) }}"
+                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                            Next
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
             {% else %}
                 <p>No topics available.</p>
             {% endif %}
         </section>
-        <!-- <div id="create-topic">
-            <form id='create_topic_button' action="/topics/create" method="get">
-                <button type="submit">Create New Topic</button>
-            </form>
-        </div> -->
     {% else %}
         <p>You must be logged in to view topics.</p>
     {% endif %}
