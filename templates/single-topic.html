@@ -4,8 +4,8 @@
 <main>
     <section id="topic-details" style="padding: 20px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; margin-bottom: 20px;">
         <h2 style="margin-bottom: 10px;">{{ topic.title }}</h2>
-        <p><strong>Created by:</strong> {{ get_user_by_id(topic.user_id).username if get_user_by_id(topic.user_id) }}</p>
-        <p><strong>Category:</strong> {{ get_category_by_id(current_user=get_user(request), category_id=topic.category_id)["Category"].name }}</p>
+        <p><strong>Created by:</strong> <a href="/users/{{topic.user_id}}"> {{get_user_by_id(topic.user_id).username if get_user_by_id(topic.user_id)}} </a></p>
+        <p><strong>Category:</strong> <a href="/categories/{{topic.category_id}}"> {{ get_category_by_id(current_user=get_user(request), category_id=topic.category_id)["Category"].name }}</a> </p>
         <p><strong>Best Reply:</strong> {{  get_reply_by_id(topic.best_reply_id).text if topic.best_reply_id else "None selected yet" }}</p>
 
         {% if get_user(request) and get_user(request).is_admin %}
@@ -21,7 +21,7 @@
             {% for reply in replies %}
                 {% if reply.text and reply.text.strip() %}
                     <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
-                        <p><strong>{{ get_user_by_id(reply.user_id).username }}</strong> said:</p>
+                        <a href="/users/{{reply.user_id}}"><p><strong>{{ get_user_by_id(reply.user_id).username }}</a></strong> said:</p>
                         <p style="margin-top: 5px; white-space: pre-wrap;">{{ reply.text }}</p>
                         {% if reply.id == topic.best_reply_id %}
                         <p style="margin-top: 10px; background-color: #4c2882; color: white; padding: 8px 12px; border-radius: 3px; text-align: center; font-weight: bold; cursor: default; border: 2px solid #6a4eb4;">Best Reply</p>
