@@ -10,6 +10,10 @@ class CustomJinja2Templates(Jinja2Templates):
         self.env.globals['check_access'] = users_services.check_user_access_level
         self.env.globals['get_category_by_id'] = categories_services.get_by_id
         self.env.globals['get_reply_by_id'] = replies_services.get_reply_by_id
+        self.env.globals['is_list'] = self.is_list
     
     def get_user_from_request(self, request):
         return get_current_user(request.cookies.get('token'))
+    
+    def is_list(self, obj):
+        return isinstance(obj, list)

@@ -50,7 +50,7 @@ def get_categories(category_id: Optional[int] = Query(default=None),
     if not categories:
         return templates.TemplateResponse(name='categories.html', context={'error': 'No matching categories found'}, request=request)
     
-    return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'page': page, 'total_pages': total_pages}, request=request) 
+    return templates.TemplateResponse(name='categories.html', context={'categories': categories, 'page': page, 'total_pages': total_pages, 'limit': limit}, request=request) 
 
 
 @router.get('/{category_id}', response_model=None)

@@ -3,7 +3,7 @@
 {% block content %}
 <main>
 {% if categories %}
-{{ load_categories(categories=categories, user=get_user(request), page=page, total_pages=total_pages) }}
+{{ load_categories(categories=categories, user=get_user(request), page=page, total_pages=total_pages, limit=limit) }}
 {% else %}
 <p> {{ error }} </p>
 {% endif %}
