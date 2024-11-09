@@ -29,41 +29,50 @@ def create_topic_page(request: Request):
 @router.get('/', response_model=None)
 def get_topics(
     request: Request = None,
-    search: Optional[str] = Query(None, description="Search by topic title"),
-    username: Optional[str] = Query(None, description="Filter by username of the topic creator"),
-    category: Optional[str] = Query(None, description="Filter by category name"),
-    status: Optional[str] = Query(None, description="Filter by topic status: 'open' or 'closed'"),
-    sort: Optional[str] = Query(None, description="Sort order: 'asc' or 'desc' (use with sort_by)"),
-    sort_by: Optional[str] = Query(None, description="Field to sort by, e.g., 'topic_id', 'user_id'"),
+    search: Optional[str] = Query(None),
+    username: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100)
 ):
-    """
-    GET /topics
-    Fetches a list of all topics, filtered by optional criteria.
-    """
-
     token = request.cookies.get('token')
     current_user = common.auth.get_current_user(token)
-
+    
+    if not current_user:
+        return templates.TemplateResponse(
+            name='topics.html',
+            context={
+                'request': request,
+                'token': token,
+                'error': 'You must be logged in to view topics.'
+            }
+        )
 
     categories = categories_services.get_categories(current_user=current_user)
-
+    
     topics = fetch_all_topics(
         search=search,
         username=username,
         category=category,
         status=status,
         sort=sort,
-        sort_by=sort_by
+        sort_by=sort_by,
+        page=page,
+        per_page=per_page
     )
 
-
     return templates.TemplateResponse(
-    name='topics.html',
-    context={
-        'topics': topics, 
-        'token': token,
-        'categories': categories,
-        'request': request
+        name='topics.html',
+        context={
+            'topics': topics['topics'],
+            'token': token,
+            'categories': categories,
+            'current_page': topics['current_page'],
+            'total_pages': topics['total_pages'],
+            'request': request
         }
     )
 

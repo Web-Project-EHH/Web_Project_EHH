@@ -37,9 +37,15 @@
     </section>
 
     {% if topics %}
-        {{ load_topics(topics=topics, user=get_user(request)) }}
-    {% else %}
-        <p>{{ error }}</p>
-    {% endif %}
+    {{ load_topics(
+        topics=topics, 
+        user=get_user(request), 
+        current_page=current_page, 
+        total_pages=total_pages,
+        request=request
+    ) }}
+{% else %}
+    <p>{{ error }}</p>
+{% endif %}
 </main>
 {% endblock %}

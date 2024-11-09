@@ -23,12 +23,14 @@ def exists(topic_id: int):
 
 #WORKS
 def fetch_all_topics(
-        search: str = Query(None, description="Search by topic title"),
-        username: str = Query(None, description="Filter by username of the topic creator"),
-        category: str = Query(None, description="Filter by category name"),
-        status: str = Query(None, description="Filter by topic status: 'open' or 'closed'"),
-        sort: str = Query(None, description="Sort order: 'asc' or 'desc' (use with sort_by)"),
-        sort_by: str = Query(None, description="Field to sort by, e.g., 'topic_id', 'user_id'")
+        search: str = None,
+        username: str = None,
+        category: str = None,
+        status: str = None,
+        sort: str = None,
+        sort_by: str = None,
+        page: int = 1,
+        per_page: int = 10
     ):
     """
     Fetches all topics based on the provided filters and sorting options.
@@ -39,7 +41,7 @@ def fetch_all_topics(
     -sort: Sort order: 'asc' or 'desc' (use with sort_by)
     -sort_by: Field to sort by, e.g., 'topic_id', 'user_id'
     """
-    params, filters = (), []
+    params, filters = [], []
     sql = (
         '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, 
            t.best_reply_id, t.category_id, c.name
@@ -50,28 +52,42 @@ def fetch_all_topics(
 
     if search:
         filters.append('t.title LIKE ?')
-        params += (f'%{search}%',)
+        params.append(f'%{search}%')
     if username:
         filters.append('u.username = ?')
-        params += (username,)
+        params.append(username)
     if category:
         filters.append('c.name = ?')
-        params += (category,)
+        params.append(category)
     if status:
         if status in ['open', 'closed']:
             filters.append('t.is_locked = ?')
-            params += (1 if status == 'closed' else 0,)
+            params.append(1 if status == 'closed' else 0)
 
     sql += (" WHERE " + " AND ".join(filters) if filters else "")
 
+    # Get total count for pagination
+    count_sql = f"SELECT COUNT(*) FROM ({sql}) as count_table"
+    total_count = read_query(count_sql, tuple(params))[0][0]
+    total_pages = (total_count + per_page - 1) // per_page
+
+    # Add sorting and pagination
     if sort_by and sort_by in ['topic_id', 'user_id', 'category_id', 'status']:
         order = "ASC" if sort == "asc" else "DESC"
         sql += f' ORDER BY {sort_by} {order}'
+    
+    sql += ' LIMIT ? OFFSET ?'
+    params.extend([per_page, (page - 1) * per_page])
 
-    data = read_query(sql, params)
+    data = read_query(sql, tuple(params))
     topics = [TopicResponse.from_query(*row) for row in data]
 
-    return topics
+    return {
+        'topics': topics,
+        'total_pages': total_pages,
+        'current_page': page,
+        'total_count': total_count
+    }
 
 
 #WORKS
