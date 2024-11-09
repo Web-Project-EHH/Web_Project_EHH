@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, Form, HTTPException, Query, Request, Depend
 from fastapi.responses import RedirectResponse, JSONResponse
 # from data.models.category import Category
 from data.models.reply import ReplyCreate, ReplyCreateWeb
-from services import categories_services, replies_services, topics_services
+from services import categories_services, replies_services, topics_services, users_services
 from typing import Optional
 import common.auth
 from common.exceptions import BadRequestException, ForbiddenException
@@ -51,7 +51,7 @@ def get_topics(
             }
         )
 
-    categories = categories_services.get_categories(current_user=current_user)
+    categories = categories_services.get_categories(limit=10000, current_user=current_user)
     
     topics = fetch_all_topics(
         search=search,
@@ -122,6 +122,11 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
     - Renders an error page if the creation fails.
     """
     user = common.auth.get_current_user(request.cookies.get('token'))
+
+    category_id = new_topic.category_id
+
+    if not users_services.check_user_access_level(user.id, category_id) == 2:
+        return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
 
     if user is None:
         return templates.TemplateResponse(name='topics.html', context={'error': 'User not authorised'}, request=request)

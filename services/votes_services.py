@@ -1,5 +1,5 @@
 from common.exceptions import NotFoundException
-from data.database import update_query
+from data.database import read_query, update_query
 from data.models.user import User
 from services import replies_services, users_services
 
@@ -52,3 +52,16 @@ def vote(reply_id: int, type: bool, current_user: User) -> str | None:
             response = 'upvoted' if type else 'downvoted'
         
     return response
+
+
+def get_votes(reply_id: int):
+    
+    votes = read_query('''SELECT CAST(SUM(CASE WHEN type = 0 THEN -1 ELSE type END) AS INT)  FROM votes WHERE reply_id = ?''', (reply_id,))
+
+    if votes:
+
+        votes = votes[0][0]
+
+        return votes if isinstance(votes, int) else ''
+    
+    return ''

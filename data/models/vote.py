@@ -5,7 +5,7 @@ class Vote(BaseModel):
 
     user_id: int
     reply_id: int
-    type: bool 
+    type: bool
 
     @classmethod
     def from_query_result(cls, user_id, reply_id, type):
