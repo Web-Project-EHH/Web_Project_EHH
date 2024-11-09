@@ -8,9 +8,9 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: DB_HOST
-        sync: false
+        sync: false  # Тези ще се попълнят ръчно в Render Dashboard
       - key: DB_PORT
-        sync: false  
+        sync: false  # По подразбиране MariaDB използва порт 3306
       - key: DB_NAME
         value: forum
       - key: DB_USER
@@ -25,11 +25,16 @@ services:
         value: 30
     healthCheckPath: /
     autoDeploy: true
-    domains:
-      - forum-app
 
 databases:
   - name: forum
     plan: free
+    engine: mariadb
     databaseName: forum
     ipAllowList: []
+    settings:
+      charset: utf8mb4  # Препоръчително за MariaDB
+      collation: utf8mb4_general_ci
+    postStartCommands:
+      - mysql -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME -e "CREATE TABLE IF NOT EXISTS messages (id INT PRIMARY KEY AUTO_INCREMENT, sender VARCHAR(100), receiver VARCHAR(100), content TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+      # Може да добавиш и други SQL заявки за създаване на таблици тук
