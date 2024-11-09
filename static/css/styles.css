@@ -1,4 +1,4 @@
-/* Reset and general styling */
+/* Reset and General Styling */
 * {
     margin: 0;
     padding: 0;
@@ -9,23 +9,21 @@ html, body {
     height: 100%;
     display: flex;
     flex-direction: column;
-}
-
-body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f4f7fb;
     color: #333;
     line-height: 1.6;
-    margin: 0;
 }
 
 /* Header Styling */
 header {
     background: linear-gradient(135deg, #6a4eb4, #2d87f0);
     color: white;
-    padding: 3rem;
-    text-align: center;
+    padding: 1rem 3rem;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     position: relative;
 }
 
@@ -33,23 +31,36 @@ header h1 {
     font-size: 3rem;
     font-weight: 600;
     letter-spacing: 1px;
-    margin-bottom: 1rem;
+}
+
+#forun_logo {
+    height: 100px;
+    margin-right: auto;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#forun_logo:hover {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+}
+
+nav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 nav ul {
     list-style: none;
     display: flex;
-    justify-content: center;
-    gap: 3rem;
-    padding: 1rem 0;
+    gap: 2rem;
 }
 
 nav ul a {
     text-decoration: none;
     color: white;
     font-weight: 500;
-    position: relative;
     font-size: 1.1rem;
+    position: relative;
 }
 
 nav ul a::after {
@@ -85,7 +96,7 @@ button, #logout_button {
 
 button:hover, #logout_button:hover {
     background-color: #4c2882;
-    transform: translateY(-2px);
+    transform: scale(1.05);
 }
 
 /* Main Content Area */
@@ -121,10 +132,6 @@ main {
     color: #4c2882;
 }
 
-#pagination span {
-    padding: 0.5rem;
-}
-
 /* Footer Styling */
 footer {
     text-align: center;
@@ -133,10 +140,6 @@ footer {
     color: white;
     margin-top: auto;
     box-shadow: 0 -6px 15px rgba(0, 0, 0, 0.1);
-}
-
-footer p {
-    font-size: 1rem;
 }
 
 /* Unauthorized Page Styling */
@@ -165,7 +168,6 @@ section#unauthorized p {
 /* Category Page Styling */
 #single_category {
     padding: 30px;
-    font-family: 'Arial', sans-serif;
     background-color: #f7f7f7;
     border: 1px solid #ddd;
     border-radius: 10px;
@@ -205,20 +207,6 @@ section#unauthorized p {
     text-decoration: underline;
 }
 
-/* Topic Details Styling */
-#topic-details {
-    padding: 25px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    background-color: #f9f9f9;
-    margin-bottom: 30px;
-}
-
-#topic-details h2 {
-    margin-bottom: 15px;
-    color: #333;
-}
-
 /* Topic Reply Styling */
 .reply {
     margin-bottom: 30px;
@@ -233,32 +221,26 @@ section#unauthorized p {
     white-space: pre-wrap;
 }
 
-.best-reply {
-    margin-top: 15px;
-    background-color: #4c2882;
-    color: white;
+.best-reply, .set-best-reply, .delete-reply {
+    margin-top: 10px;
     padding: 10px 15px;
     border-radius: 5px;
+    color: white;
     text-align: center;
     font-weight: bold;
+    cursor: pointer;
+}
+
+.best-reply {
+    background-color: #4c2882;
 }
 
 .set-best-reply {
-    margin-top: 10px;
     background-color: #5cb85c;
-    color: white;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 5px;
 }
 
 .delete-reply {
-    margin-top: 10px;
     background-color: #d9534f;
-    color: white;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 5px;
 }
 
 /* Responsive Design */
@@ -275,15 +257,4 @@ section#unauthorized p {
     main {
         padding: 1.5rem;
     }
-
-    #pagination a {
-        padding: 0.5rem 1rem;
-    }
 }
-
-/* Hover effects for buttons */
-button:hover, #logout_button:hover {
-    transform: scale(1.05);
-    background-color: #4c2882;
-}
-

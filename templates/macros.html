@@ -8,7 +8,7 @@
 <body>
     {% macro load_header(user=None) %}
         <header>
-            <h1>Welcome to the Forum</h1>
+            <a href="/"><img id="forun_logo" src="/static/images/forun_logo.webp" alt="Forum Logo"></a>
             <nav>
                 <ul>
                     <a href="/"><li>Home</li></a>
@@ -31,7 +31,7 @@
 
     {% macro load_footer() %}
         <footer>
-            <p>&copy; Forum. All rights reserved.</p>
+            <p>&copy; <time datetime="2024">2024</time> Forun</p>
         </footer>
     {% endmacro %}
 
