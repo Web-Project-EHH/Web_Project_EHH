@@ -109,10 +109,16 @@
             <h2>{{ user.username }}</h2>
             <p>{{ user.email }}</p>
             <p>{{ user.first_name }} {{ user.last_name }}</p>
+            {% if user.bio %}
+                <div class="bio">
+                    <h3>About Me</h3>
+                    <p>{{ user.bio }}</p>
+                </div>
+            {% endif %}
         </section>
     {% endmacro %}
 
-    {% macro load_topics(topics=None, user=None) %}
+    {% macro load_topics(topics=None, user=None, current_page=None, total_pages=None, request=None) %}
     {% if user %}
         <section id="topics">
             {% if topics %}
@@ -127,15 +133,32 @@
                     </tr>
                     {% endfor %}
                 </table>
+
+                {% if current_page and total_pages and request %}
+                <div class="pagination" style="margin-top: 20px; text-align: center;">
+                    {% if current_page > 1 %}
+                        <a href="{{ request.url.include_query_params(page=current_page-1) }}" 
+                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    <span style="margin: 0 10px;">
+                        Page {{ current_page }} of {{ total_pages }}
+                    </span>
+
+                    {% if current_page < total_pages %}
+                        <a href="{{ request.url.include_query_params(page=current_page+1) }}"
+                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                            Next
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
             {% else %}
                 <p>No topics available.</p>
             {% endif %}
         </section>
-        <!-- <div id="create-topic">
-            <form id='create_topic_button' action="/topics/create" method="get">
-                <button type="submit">Create New Topic</button>
-            </form>
-        </div> -->
     {% else %}
         <p>You must be logged in to view topics.</p>
     {% endif %}
