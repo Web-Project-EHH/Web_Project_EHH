@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Permissions{% endblock %}
+
+{% block content %}
+<main>
+    {% if get_user(request).is_admin %}
+    <section id="permissions">
+        <h2>Permissions</h2>
+        <form action="/users/{{ user.id }}/permissions" method="post">
+            <table>
+                <tr>
+                    <th>Category</th>
+                    <th>Access Level</th>
+                </tr>
+                {% for category in categories %}
+                    {% if category.is_private %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td>
+                        <input type="hidden" name="permissions[{{ category.id }}][category_id]" value="{{ category.id }}">
+                        <select name="permissions[{{ category.id }}][access_level]">
+                            <option value="1" {% if check_access(user.id, category.id) == 1 %}selected{% endif %}>Read</option>
+                            <option value="2" {% if check_access(user.id, category.id) == 2 %}selected{% endif %}>Write</option>
+                            <option value="0" {% if check_access(user.id, category.id) == 0 %}selected{% endif %}>No Access</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </table>
+            <button type="submit">Update Permissions</button>
+        </form>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

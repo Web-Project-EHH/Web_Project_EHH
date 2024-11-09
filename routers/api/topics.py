@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from services import topics_services
 from typing import Optional, List
+import common.auth
 from common.auth import UserAuthDep
 from data.models.topic import TopicCreate, TopicBestReplyUpdate, TopicResponse
 from services.topics_services import fetch_all_topics, verify_topic_owner
@@ -175,3 +176,29 @@ def lock_topic(topic_id: int, user: UserAuthDep):
 
     return {"message": f"Topic {topic_id} is {'locked' if new_lock_status else 'unlocked'}"}
 
+
+#WORKS
+@topics_router.delete('/{topic_id}')
+def delete_topic(topic_id: int, user: UserAuthDep):
+    """
+    DELETE /topics/{topic_id}
+    Deletes a topic by its ID.
+    Parameters:
+    - `topic_id` (int): ID of the topic to delete.
+    - `user` (UserAuthDep): Current user details.
+    Returns:
+    - 200 OK: Topic deleted successfully.
+    - 403 Forbidden: User is not allowed to delete the topic.
+    - 404 Not Found: Topic does not exist.
+    """
+    topic = topics_services.fetch_topic_by_id(topic_id)
+                                        
+    if not topic:
+        raise HTTPException(status_code=404, detail='Topic does not exist')
+    
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail='User not authorised')
+    
+    topics_services.delete_topic(topic_id)
+
+    return {"message": f"Topic {topic_id} deleted successfully"}

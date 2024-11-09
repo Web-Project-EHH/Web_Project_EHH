@@ -74,9 +74,11 @@ class TopicCreate(BaseModel):
     Topic model for creating a new topic with no category
     It has the following fields:
     - title: str - the title of the topic
+    - text: str - the content of the topic
     - category_id: int - the id of the category the topic belongs
     """
     title: ValidTitle
+    text: str = Field(..., min_length=3)
     category_id: PositiveInt | None = NO_CATEGORY
 
 
@@ -86,7 +88,7 @@ class TopicBestReplyUpdate(BaseModel):
     It has the following fields:
     - best_reply_id: int - the id of the best reply to the topic
     """
-    best_reply_id: PositiveInt
+    best_reply_id: int
 
 
 class TopicCategoryResponseUser(BaseModel):

@@ -5,7 +5,7 @@ from services import replies_services
 from data.database import read_query, insert_query
 from data.models.vote import Vote
 
-    
+
 def create_user(user: User) -> int:
     return insert_query(
         'INSERT INTO users (username, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
@@ -32,7 +32,7 @@ def get_users():
     
 
 def has_voted(user_id: int, reply_id: int) -> Vote | None:
-    
+
     """
     Checks if a user has voted on a specific reply.
 
@@ -49,17 +49,17 @@ def has_voted(user_id: int, reply_id: int) -> Vote | None:
 
     if not exists(user_id):
         raise NotFoundException(detail='User does not exist')
-    
+
     if not replies_services.exists(reply_id):
         raise NotFoundException(detail='Reply does not exist')
-    
+
     vote = read_query('''SELECT user_id, reply_id, type FROM votes WHERE user_id = ? AND reply_id = ?''', (user_id, reply_id))
 
     return next((Vote.from_query_result(*row) for row in vote), None)
 
 
 def exists(user_id: int) -> bool:
-    
+
     user = read_query('''SELECT user_id FROM users WHERE user_id = ?''', (user_id,))
 
     return bool(user)
@@ -75,3 +75,20 @@ def email_exists(email: str) -> bool:
 def get_users_by_username(username: str):
     data = read_query('SELECT * FROM users WHERE username LIKE ?', (f'%{username}%',))
     return [UserResponse.from_query_result(row) for row in data]
+
+def delete_user(user_id: int):
+    return insert_query('DELETE FROM users WHERE user_id = ?', (user_id,))
+
+def check_user_access_level(user_id: int, category_id: int) -> int:
+    data = read_query('SELECT write_access FROM users_categories_permissions WHERE user_id = ? AND category_id = ?', (user_id, category_id))
+    if not data:
+        return 2
+    return data[0][0]
+
+def update_user_permissions(user_id: int, category_id: int, access_level: int):
+    has_entry = read_query('SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?', (user_id, category_id))
+
+    if not has_entry:
+        return insert_query('INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)', (user_id, category_id, access_level))
+
+    return insert_query('UPDATE users_categories_permissions SET write_access = ? WHERE user_id = ? AND category_id = ?', (access_level, user_id, category_id))

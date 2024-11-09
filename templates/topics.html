@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "macros.html" import load_topics %}
+{% block title %}Topics{% endblock %}
+{% block content %}
+<main>
+    {% if topics %}
+        {{ load_topics(topics=topics, user=get_user(request)) }}
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+</main>
+{% endblock %}

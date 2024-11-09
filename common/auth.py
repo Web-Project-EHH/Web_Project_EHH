@@ -34,23 +34,22 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 def verify_token(token: str):
     if token in token_blacklist:
         raise ForbiddenException("Token has been revoked")
-    
+
     if not token:
-        raise UnauthorizedException("Could not validate credentials")
-    
+        return None
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get('sub')
+        username = payload.get('sub') if payload else None
         if username is None:
-            return username
+            return None
         return payload
     except JWTError:
-            raise UnauthorizedException("Could not validate credentials")
-
+            return None
 
 def authenticate_user(username: str, password: str) -> Optional[UserResponse]:
     user_data = read_query('SELECT * FROM users WHERE username=?', (username,))
-    
+
     if not user_data or not verify_password(password, user_data[0][2]):
         return None
     return UserResponse.from_query_result(user_data[0])
@@ -60,7 +59,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     if not token:
         return None
     payload = verify_token(token)
-    username = payload.get('sub')
+    username = payload.get('sub') if payload else None
     if not username:
         return None
     return get_user(username)

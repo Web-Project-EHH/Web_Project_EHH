@@ -37,3 +37,9 @@ class ReplyCreate(BaseModel):
 
     text: str = Field(..., min_length=1)
     topic_id: int
+
+class ReplyCreateWeb(BaseModel):
+
+    text: str = Field(..., min_length=1)
+    topic_id: int
+    user_id: int = None

@@ -1,6 +1,6 @@
 from fastapi import Form
 from data.database import read_query, insert_query, update_query
-from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse
+from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse, CategoryResponseAdmin
 from typing import List
 from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
 from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
@@ -27,20 +27,27 @@ def get_categories(current_user: User,
         CategoryResponse | List[CategoryResponse] | None: A single CategoryResponse if one result is found,
         a list of CategoryResponse objects if multiple results are found, or None if no results are found.
     """
-   
-    query = '''SELECT category_id, name FROM categories WHERE 1=1'''
+    
+    query = '''SELECT c.category_id, c.name, c.is_locked, c.is_private FROM categories c ''' if current_user.is_admin else '''SELECT c.category_id, c.name FROM categories c'''
     params = []
 
+    if not current_user.is_admin:
+        # Non-admin users can see public categories (is_private = 0)
+        # and private categories where they have access (access_level > 0)
+        query += ''' LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id and ucp.user_id = ?'''
+        query += ''' WHERE (c.is_private = 0 OR (c.is_private = 1 AND ucp.write_access > 0))'''
+        params.append(current_user.id)
+    else:
+        # Admins can see both public and private categories
+        query += ''' LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id AND ucp.user_id = ?'''
+        params.append(current_user.id)
+
     if category_id:
-        query += ''' AND category_id = ?'''
+        query += ''' AND c.category_id = ?'''
         params.append(category_id)
 
-    if not current_user.is_admin:
-        query += ''' AND is_private = ?''' 
-        params.append(0)
-
     if name:
-        query += ''' AND name LIKE ?'''
+        query += ''' AND c.name LIKE ?'''
         params.append(f'%{name}%')
 
     if sort_by:
@@ -52,14 +59,13 @@ def get_categories(current_user: User,
     query += ''' LIMIT ? OFFSET ?'''
     params.extend([limit, offset])
 
-    categories = read_query(query, tuple(params))
+    categories = read_query(query, tuple(params)) 
 
-
-    if len(categories) > 1: # Return a list of objects if more than one instance is found
-        return [CategoryResponse.from_query_result(*obj) for obj in categories]
+    if len(categories) > 1:  # Return a list of objects if more than one instance is found
+        return [CategoryResponseAdmin.from_query_result(*obj) for obj in categories] if current_user.is_admin else [CategoryResponse.from_query_result(*obj) for obj in categories]
     
-    else: # Otherwise return a single object
-        return next((CategoryResponse.from_query_result(*row) for row in categories), None)
+    else:  # Otherwise return a single object
+        return next((CategoryResponseAdmin.from_query_result(*row) for row in categories), None) if current_user.is_admin else next((CategoryResponse.from_query_result(*row) for row in categories), None)
     
 
 def create(category: CategoryCreate) -> Category | None:
@@ -332,12 +338,12 @@ def get_by_id(category_id: int, current_user: User):
         
     else:
         category = read_query('''SELECT category_id, name FROM categories
-                          WHERE is_private = 0 AND category_id = ?''', (category_id,))
+                          WHERE category_id = ?''', (category_id,))
         
         if category:
         
             topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
-                        WHERE is_locked = 0 AND category_id = ?''', (category_id,))
+                        WHERE category_id = ?''', (category_id,))
     
             return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
                     'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
