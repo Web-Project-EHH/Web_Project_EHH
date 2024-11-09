@@ -35,32 +35,46 @@
         </footer>
     {% endmacro %}
 
-    {% macro load_categories(categories=None, user=None, page=None, total_pages=None) %}
+    {% macro load_categories(categories=None, user=None, page=None, total_pages=None, limit=None) %}
         {% if user %}
-        <section id="categories">
-            {% if categories %}
-                <h2>Categories</h2>
-                <table>
+ <section id="categories">
+    {% if categories %}
+        <h2>Categories</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+            </tr>
+            {% if is_list(categories) %}
+                {% for category in categories %}
                     <tr>
-                        <th>Name</th>
+                        <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
                     </tr>
-                    {% for category in categories %}
+                {% endfor %}
+                {% if categories|length < limit %}
+                    {% for _ in range(limit - categories|length) %}
                         <tr>
-                            <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
+                            <td><br></td>
                         </tr>
                     {% endfor %}
-                    {% if categories|length < 10 %}
-                        {% for _ in range(10 - categories|length) %}
-                            <tr>
-                                <td><br></td>
-                            </tr>
-                        {% endfor %}
-                    {% endif %}
-                </table>
+                {% endif %}
             {% else %}
-                <p> {{ error }} </p>
+                <tr>
+                    <td><a href="/categories/{{ categories.id }}/">{{ categories.name }}</a></td>
+                </tr>
+                {% for _ in range(limit - 1) %}
+                    <tr>
+                        <td><br></td>
+                    </tr>
+                {% endfor %}
             {% endif %}
-        </section>
+        </table>
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+</section>
+
+        
+        
         
             {% if user.is_admin %}
             <div id="create_category">
