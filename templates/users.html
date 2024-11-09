@@ -1,19 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
 <main>
-    <h1>Find a user</h1>
-
-    <form method="get" action="/users/search">
-        <label for="username">Username:</label>
-        <input type="text" name="username" placeholder="Enter username" required>
-        <button type="submit">Search</button>
-    </form>
-    {% if users %}
-    <div>
-        {% for user in users %}
-        <p><a href="/users/{{ user.id }}/">{{ user.username }}</a></p>
-        {% endfor %}
-    </div>
+    {% if get_user(request) %}
+        <h1>Find a user</h1>
+        <form method="get" action="/users/search">
+            <label for="username">Username:</label>
+            <input type="text" name="username" placeholder="Enter username" required>
+            <button type="submit">Search</button>
+        </form>
+        {% if users %}
+        <div>
+            {% for user in users %}
+            <p><a href="/users/{{ user.id }}/">{{ user.username }}</a></p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% else %}
+        <p>You need to login to view this page</p>
     {% endif %}
 </main>
 {% endblock %}
