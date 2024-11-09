@@ -37,23 +37,31 @@
 
     {% macro load_categories(categories=None, user=None, page=None, total_pages=None) %}
         {% if user %}
-         <section id="categories">
+        <section id="categories">
             {% if categories %}
-             <h2>Categories</h2>
-                   <table>
-                       <tr>
-                            <th>Name</th>
-                        </tr>
-                        {% for category in categories %}
+                <h2>Categories</h2>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                    </tr>
+                    {% for category in categories %}
                         <tr>
                             <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
                         </tr>
+                    {% endfor %}
+                    {% if categories|length < 10 %}
+                        {% for _ in range(10 - categories|length) %}
+                            <tr>
+                                <td><br></td>
+                            </tr>
                         {% endfor %}
-                    </table>
-                {% else %}
-                    <p> {{ error }} </p>
-                {% endif %}
+                    {% endif %}
+                </table>
+            {% else %}
+                <p> {{ error }} </p>
+            {% endif %}
         </section>
+        
             {% if user.is_admin %}
             <div id="create_category">
                 <form id='create_category_button' action="/categories/create" method="get">
@@ -64,11 +72,15 @@
             <section id="pagination">
                 <div>
                     {% if page > 1 %}
-                        <a href="/categories?page={{ page - 1 }}">Previous</a>
+                    <a href="/categories?page={{ page - 1 }}">Previous</a>
+                    {% else %}
+                        <span>Previous</span>
                     {% endif %}
-                    <span>Page {{ page }} of {{ total_pages }}</span>
+                    <span>{{ page }} / {{ total_pages }}</span>
                     {% if page < total_pages %}
                         <a href="/categories?page={{ page + 1 }}">Next</a>
+                    {% else %}
+                        <span>Next</span>
                     {% endif %}
                 </div>
             </section>
