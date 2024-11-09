@@ -224,7 +224,6 @@ def delete_topic(topic_id: int):
     Deletes a topic by its ID.
     """
 
-    
     update_query('''DELETE FROM replies WHERE topic_id = ?''', (topic_id,))
 
     update_query('''DELETE FROM topics WHERE topic_id = ?''', (topic_id,))

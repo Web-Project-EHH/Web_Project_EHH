@@ -42,6 +42,10 @@ def get_topics(
     """
 
     token = request.cookies.get('token')
+    current_user = common.auth.get_current_user(token)
+
+
+    categories = categories_services.get_categories(current_user=current_user)
 
     topics = fetch_all_topics(
         search=search,
@@ -54,9 +58,13 @@ def get_topics(
 
 
     return templates.TemplateResponse(
-        name='topics.html',
-        context={'topics': topics, 'token': token},
-        request=request
+    name='topics.html',
+    context={
+        'topics': topics, 
+        'token': token,
+        'categories': categories,
+        'request': request
+        }
     )
 
 #WORKS
@@ -131,7 +139,7 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
     except Exception as exc:
         return templates.TemplateResponse("error.html", {"request": request, "message": "An unexpected error occurred."})
     
-#not working
+#WORKS
 @router.post('/{topic_id}/best_reply', response_model=None)
 async def update_topic_best_reply(
     topic_id: int,
