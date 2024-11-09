@@ -45,21 +45,33 @@ def get_reply_by_id(reply_id: int, request: Request = None, current_user: User =
     
 
 @router.post('/{reply_id}/vote', response_model=None)
-def vote(reply_id: int, type: bool, current_user: User=Depends(common.auth.get_current_user), request: Request = None):
+async def vote(request: Request, reply_id: int):
+
+    current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not current_user:
+        return templates.TemplateResponse(name='error.html', context={'error': 'You must be logged in to vote'}, request=request)
     
-    vote = votes_services.vote(reply_id=reply_id, type=type, current_user=current_user)
+    vote = await request.form()
+    vote = int(vote['vote'])
+    vote = True if vote == 1 else False
+
+
+    vote = votes_services.vote(reply_id=reply_id, type=vote, current_user=current_user)
+
+    referer = request.headers.get("referer")
                                     
     if not vote:
          raise BadRequestException('Vote could not be registered')
     
     elif vote == 'upvoted':
-         return templates.TemplateResponse(name='single-reply.html', context={'message':'You have upvoted'}, request=request)
+         return RedirectResponse(url=referer, status_code=303)
     
     elif vote == 'downvoted':
-         return templates.TemplateResponse(name='single-reply.html', context={'message':'You have downvoted'}, request=request)
-    
+         return RedirectResponse(url=referer, status_code=303) 
+      
     elif vote == 'vote deleted':
-         return templates.TemplateResponse(name='single-reply.html', context={'message':'Vote deleted', 'user': current_user}, request=request)
+        return RedirectResponse(url=referer, status_code=303)
 
 
 @router.patch('/', response_model=None)

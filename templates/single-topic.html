@@ -15,25 +15,71 @@
         {% endif %}
     </section>
 
+    
     <h3>Replies</h3>
     {% if replies %}
         <div style="margin-top: 20px;">
             {% for reply in replies %}
                 {% if reply.text and reply.text.strip() %}
-                    <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: {% if reply.id == topic.best_reply_id %}#e0c7f3{% else %}#f9f9f9{% endif %};">
+                    <div style="position: relative; margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: {% if reply.id == topic.best_reply_id %}#e0c7f3{% else %}#f9f9f9{% endif %};">
+                        {% if reply.id == topic.best_reply_id %}
+                        <p style="position: relative; font-weight: bold; color: purple; cursor: default; font-size: 30px; padding: 0; margin: 0;">&#128081;</p>
+                        {% endif %}
                         <a href="/users/{{reply.user_id}}"><p><strong>{{ get_user_by_id(reply.user_id).username }}</a></strong> said:</p>
                         <p style="margin-top: 5px; white-space: pre-wrap;">{{ reply.text }}</p>
-                        {% if reply.id == topic.best_reply_id %}
-                            <p style="margin-top: 10px; font-weight: bold; color: #4c2882; cursor: default;">Best Reply</p>
-                        {% else %}
                             {% if get_user(request).id == topic.user_id %}
                                 <button class="set-best-reply" data-reply-id="{{ reply.id }}" style="margin-top: 10px; background-color: #5cb85c; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 3px;">Select as Best Reply</button>
                             {% endif %}
                             {% if get_user(request).id == reply.user_id %}
                                 <button class="delete-reply" data-reply-id="{{ reply.id }}" style="margin-top: 10px; background-color: #d9534f; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 3px;">Delete Reply</button>
                             {% endif %}
-                            {% if get_user(request).is_admin %}
+                        {% if reply.user_id != get_user(request).id %}
+                        <div class="vote-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
+                            {% if has_voted(get_user(request).id, reply.id).type != 1 %}
+                            <form action="/replies/{{reply.id}}/vote" method="POST" style="display: inline;">
+                                <input type="hidden" name="reply_id" value="{{ reply.id }}">
+                                <button type="submit" class="upvote" name="vote" value='1' 
+                                    style="background-color: white; color: green; border: green solid 1px; padding: 5px 10px; cursor: pointer; border-radius: 50%; font-size: 14px;">
+                                    ↑
+                                </button>
+                            </form>
+                            {% else %}
+                            <form action="/replies/{{reply.id}}/vote" method="POST" style="display: inline;">
+                                <input type="hidden" name="reply_id" value="{{ reply.id }}">
+                                <button type="submit" class="upvote" name="vote" value='1' 
+                                    style="background-color: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 50%; font-size: 14px;">
+                                    ↑
+                                </button>
+                            </form>
                             {% endif %}
+                        
+                            {% if has_voted(get_user(request).id, reply.id).type != 0 %}
+                            <form action="/replies/{{reply.id}}/vote" method="POST" style="display: inline;">
+                                <input type="hidden" name="reply_id" value="{{ reply.id }}">
+                                <button type="submit" class="downvote" name="vote" value='0'
+                                    style="background-color: white; color: red; border: red solid 1px; padding: 5px 10px; cursor: pointer; border-radius: 50%; font-size: 14px;">
+                                    ↓
+                                </button>
+                            </form>
+                            {% else %}
+                            <form action="/replies/{{reply.id}}/vote" method="POST" style="display: inline;">
+                                <input type="hidden" name="reply_id" value="{{ reply.id }}">
+                                <button type="submit" class="downvote" name="vote" value='0'
+                                    style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 50%; font-size: 14px;">
+                                    ↓
+                                </button>
+                            </form>
+                            {% endif %}
+                        
+                            <p style="margin: 0; color: {% if get_votes(reply.id) and get_votes(reply.id) < 0 %}red{% else %}green{% endif %};">
+                                {{ get_votes(reply.id) }}
+                            </p>
+                        </div>
+                        
+                        {%else%}
+                        <div class="vote-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
+                            <p style="margin: 0; color: {% if get_votes(reply.id) and get_votes(reply.id) < 0 %}red{% else %}green{% endif %}">{{get_votes(reply.id)}}</p>
+                        </div>
                         {% endif %}
                     </div>
                 {% endif %}

@@ -33,11 +33,13 @@
         {% else %}
         <p>You need to be logged in to view this category.</p>
         {% endif %}
+        {% if check_access(category_id=category.id, user_id=get_user(request).id) == 2 %}
         <div id="create_topic">
             <form id='create_topic_button' action="/topics/create" method="get">
                 <button type="submit">Create New Topic</button>
             </form>
         </div>
+        {% endif %}
     </section>
 
     <script>
