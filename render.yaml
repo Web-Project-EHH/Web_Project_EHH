@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: forum-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false  
+      - key: DB_NAME
+        value: forum
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+    healthCheckPath: /
+    autoDeploy: true
+    domains:
+      - forum-app
+
+databases:
+  - name: forum
+    plan: free
+    databaseName: forum
+    ipAllowList: []
+    settings:
+      charset: latin1
+      collation: latin1_swedish_ci
+    postStartCommands:
+      - python -c "from data.database import create_tables; create_tables()"
