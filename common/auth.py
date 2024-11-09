@@ -36,17 +36,16 @@ def verify_token(token: str):
         raise ForbiddenException("Token has been revoked")
 
     if not token:
-        raise UnauthorizedException("Could not validate credentials")
+        return None
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get('sub')
+        username = payload.get('sub') if payload else None
         if username is None:
-            raise username
+            return None
         return payload
     except JWTError:
-            raise UnauthorizedException("Could not validate credentials")
-
+            return None
 
 def authenticate_user(username: str, password: str) -> Optional[UserResponse]:
     user_data = read_query('SELECT * FROM users WHERE username=?', (username,))
@@ -60,7 +59,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     if not token:
         return None
     payload = verify_token(token)
-    username = payload.get('sub')
+    username = payload.get('sub') if payload else None
     if not username:
         return None
     return get_user(username)

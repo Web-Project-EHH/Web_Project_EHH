@@ -1,17 +1,15 @@
 import re
-from fastapi import APIRouter, HTTPException, Query, Request, Depends, Form
+from fastapi import APIRouter, Body, Form, HTTPException, Query, Request, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 # from data.models.category import Category
-from services import topics_services
-from typing import Optional, List
+from data.models.reply import ReplyCreate, ReplyCreateWeb
+from services import categories_services, replies_services, topics_services
+from typing import Optional
 import common.auth
-from common.exceptions import BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException
-from services.categories_services import get_by_id, is_private
-from data.models.topic import TopicCreate, TopicBestReplyUpdate, TopicResponse
-from services.topics_services import fetch_all_topics, fetch_replies_for_topic, verify_topic_owner, fetch_topic_by_id, topic_create_form
+from common.exceptions import BadRequestException, ForbiddenException
+from data.models.topic import TopicCreate, TopicBestReplyUpdate
+from services.topics_services import fetch_all_topics, verify_topic_owner
 from common.template_config import CustomJinja2Templates
-from data.models.user import User
-from services.replies_services import get_replies
 from mariadb import IntegrityError
 
 
@@ -23,7 +21,8 @@ templates = CustomJinja2Templates(directory="templates")
 def create_topic_page(request: Request):
     return templates.TemplateResponse(
         name='create-topic.html',
-        request=request
+        request=request,
+        context={'categories': categories_services.get_categories(limit=10000, current_user=common.auth.get_current_user(request.cookies.get('token')))}
     )
 
 #WORKS
@@ -134,39 +133,50 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
     
 #not working
 @router.post('/{topic_id}/best_reply', response_model=None)
-def update_topic_best_reply(
-    topic_id: int, 
-    best_reply_data: TopicBestReplyUpdate = Depends(), 
-    request: Request = None
+async def update_topic_best_reply(
+    topic_id: int,
+    request: Request,
+    best_reply_data: dict = Body(...),
 ):
-    user = common.auth.get_current_user(request.cookies.get('token'))
+    token = request.cookies.get('token')
+    user = common.auth.get_current_user(token)
 
-    if user is None:
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'User not authorised'}, request=request)
-                   
+    if not user:
+        return templates.TemplateResponse(
+            name='error.html',
+            context={'request': request, 'message': 'User not authorised'}
+        )
+
     topic = topics_services.fetch_topic_by_id(topic_id)
-
     if not topic:
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'Topic not found'}, request=request)
-    
+        return templates.TemplateResponse(
+            name='error.html',
+            context={'request': request, 'message': 'Topic not found'}
+        )
+
     if not verify_topic_owner(user.id, topic_id):
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'User not authorised'}, request=request)
-    
-    best_reply_id = best_reply_data.best_reply_id
-    
+        return templates.TemplateResponse(
+            name='error.html',
+            context={'request': request, 'message': 'User not authorised'}
+        )
+
     topic_replies = topics_services.fetch_replies_for_topic(topic_id)
-
     if not topic_replies:
-        return templates.TemplateResponse(name='topics.html', context={'request': request, 'error': 'No replies found'}, request=request)
-    
-    reply_ids = [reply.id for reply in topic_replies]
+        return templates.TemplateResponse(
+            name='topics.html',
+            context={'request': request, 'error': 'No replies found'}
+        )
 
-    if best_reply_id in reply_ids:
+    best_reply_id = int(best_reply_data.get('best_reply_id'))
+
+    if best_reply_id and best_reply_id in [reply.id for reply in topic_replies]:
         topics_services.update_best_reply_for_topic(topic_id, best_reply_id)
         return RedirectResponse(url=f"/topics/{topic_id}", status_code=303)
-    else:
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'Reply ID not found'}, request=request)
-    
+
+    return templates.TemplateResponse(
+        name='error.html',
+        context={'request': request, 'message': 'Reply ID not found'}
+    )
 
 #not working
 @router.patch('/{topic_id}/locking')
@@ -220,3 +230,21 @@ def delete_topic(topic_id: int, request: Request = None):
         
     except IntegrityError:
         raise ForbiddenException(detail='Topic could not be deleted')
+
+
+@router.post('/{topic_id}/create', response_model=None)
+async def create_reply(request: Request):
+
+    current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+    reply_data = await request.form()
+
+    topic_id = int(reply_data.get('topic_id'))
+
+    text = reply_data.get('text')
+
+    reply = ReplyCreateWeb(text=text, topic_id=topic_id, user_id=current_user.id)
+
+    reply = replies_services.create(reply, current_user)
+     
+    return RedirectResponse(url=f"/topics/{topic_id}", status_code=303)
