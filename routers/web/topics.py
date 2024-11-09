@@ -135,29 +135,43 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
 #not working
 @router.post('/{topic_id}/best_reply', response_model=None)
 def update_topic_best_reply(
-    topic_id: int, 
-    best_reply_data: TopicBestReplyUpdate = Depends(), 
-    request: Request = None
+    topic_id: int,
+    request: Request,  # Преместено преди параметъра с default стойност
+    best_reply_id: int = Form(...)  # Параметър от форма
 ):
     user = common.auth.get_current_user(request.cookies.get('token'))
 
     if user is None:
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'User not authorised'}, request=request)
-                   
+        return templates.TemplateResponse(
+            name='error.html', 
+            context={'request': request, 'message': 'User not authorised'}, 
+            request=request
+        )
+
     topic = topics_services.fetch_topic_by_id(topic_id)
 
     if not topic:
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'Topic not found'}, request=request)
+        return templates.TemplateResponse(
+            name='error.html', 
+            context={'request': request, 'message': 'Topic not found'}, 
+            request=request
+        )
     
     if not verify_topic_owner(user.id, topic_id):
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'User not authorised'}, request=request)
-    
-    best_reply_id = best_reply_data.best_reply_id
+        return templates.TemplateResponse(
+            name='error.html', 
+            context={'request': request, 'message': 'User not authorised'}, 
+            request=request
+        )
     
     topic_replies = topics_services.fetch_replies_for_topic(topic_id)
 
     if not topic_replies:
-        return templates.TemplateResponse(name='topics.html', context={'request': request, 'error': 'No replies found'}, request=request)
+        return templates.TemplateResponse(
+            name='topics.html', 
+            context={'request': request, 'error': 'No replies found'}, 
+            request=request
+        )
     
     reply_ids = [reply.id for reply in topic_replies]
 
@@ -165,8 +179,11 @@ def update_topic_best_reply(
         topics_services.update_best_reply_for_topic(topic_id, best_reply_id)
         return RedirectResponse(url=f"/topics/{topic_id}", status_code=303)
     else:
-        return templates.TemplateResponse(name='error.html', context={'request': request, 'message': 'Reply ID not found'}, request=request)
-    
+        return templates.TemplateResponse(
+            name='error.html', 
+            context={'request': request, 'message': 'Reply ID not found'}, 
+            request=request
+        )
 
 #not working
 @router.patch('/{topic_id}/locking')
