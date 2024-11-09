@@ -170,3 +170,51 @@ async def update_permissions(user_id: int, request: Request):
         users_services.update_user_permissions(user_id=user_id, category_id=category_id, access_level=access_level)
 
     return RedirectResponse(url=f'/users/{user_id}/permissions', status_code=302)
+
+
+@router.post('/update-profile', response_model=None)
+async def update_profile(
+    request: Request,
+    email: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    new_password: str = Form(None),
+    confirm_password: str = Form(None)
+):
+    current_user = auth.get_current_user(request.cookies.get('token'))
+    
+    if not current_user:
+        return templates.TemplateResponse(
+            name="login.html", 
+            context={'error': 'You need to login'}, 
+            request=request
+        )
+
+    try:
+        users_services.update_user_profile(
+            user_id=current_user.id,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            new_password=new_password,
+            confirm_password=confirm_password
+        )
+        # Redirect with success message
+        return templates.TemplateResponse(
+            name="profile.html",
+            context={
+                'request': request,
+                'success': 'Profile updated successfully!',
+                'user': current_user
+            }
+        )
+    except ValueError as e:
+        # Return with error message
+        return templates.TemplateResponse(
+            name="profile.html", 
+            context={
+                'request': request,
+                'error': str(e),
+                'user': current_user
+            }
+        )

@@ -4,6 +4,8 @@ from data.models.user import User, UserRegistration, UserResponse
 from services import replies_services
 from data.database import read_query, insert_query
 from data.models.vote import Vote
+import common.auth
+from mariadb import IntegrityError
 
 
 def create_user(user: User) -> int:
@@ -92,3 +94,30 @@ def update_user_permissions(user_id: int, category_id: int, access_level: int):
         return insert_query('INSERT INTO users_categories_permissions (user_id, category_id, write_access) VALUES (?, ?, ?)', (user_id, category_id, access_level))
 
     return insert_query('UPDATE users_categories_permissions SET write_access = ? WHERE user_id = ? AND category_id = ?', (access_level, user_id, category_id))
+
+def update_user_profile(user_id: int, email: str, first_name: str, last_name: str, new_password: str = None, confirm_password: str = None):
+    """Updates user profile information"""
+    try:
+        # Password validation
+        if new_password:
+            if not confirm_password:
+                raise ValueError("Please confirm your new password")
+            if new_password != confirm_password:
+                raise ValueError("Passwords do not match")
+            
+            hashed_password = common.auth.get_password_hash(new_password)
+            insert_query(
+                '''UPDATE users 
+                   SET email = ?, first_name = ?, last_name = ?, password = ? 
+                   WHERE user_id = ?''',
+                (email, first_name, last_name, hashed_password, user_id)
+            )
+        else:
+            insert_query(
+                '''UPDATE users 
+                   SET email = ?, first_name = ?, last_name = ? 
+                   WHERE user_id = ?''',
+                (email, first_name, last_name, user_id)
+            )
+    except IntegrityError:
+        raise ValueError("Email address already in use")
