@@ -6,13 +6,15 @@ import uuid
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from common.template_config import CustomJinja2Templates
 from services import messages_services
 from services.messages_services import create_message
+import common.auth
 
 
 
 router = APIRouter(prefix='/messages', tags=['Messages'])
-templates = Jinja2Templates(directory="templates")
+templates = CustomJinja2Templates(directory="templates")
 
 
 @dataclass
@@ -70,6 +72,12 @@ manager = ConnectionManager()
 
 @router.get("/", response_class=HTMLResponse)
 def get_room(request: Request):
+
+  current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+  if not current_user:
+    return templates.TemplateResponse("users.html", {"error": "You need to login first", "request": request})
+
   return templates.TemplateResponse("message.html", {"request": request})
 
 @router.websocket("/message")
