@@ -210,3 +210,10 @@ def get_reply_by_id(reply_id: int) -> Reply | None:
 def reply_create_form(text: str = Form(...)) -> ReplyCreateWeb:
 
     return ReplyCreateWeb(text=text, user_id=None)
+
+
+def is_best_reply(reply_id: int) -> bool:
+
+    best_reply_id = read_query('''SELECT best_reply_id FROM topics WHERE best_reply_id = ?''', (reply_id,))
+
+    return bool(best_reply_id)

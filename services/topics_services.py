@@ -281,3 +281,7 @@ def topic_create_form(title: str = Form(...), text: str = Form(...), category_id
         error_messages = "; ".join([f"{err['loc'][0]}: {err['msg']}" for err in exc.errors()])
         raise HTTPException(status_code=400, detail=f"{error_messages}")
 
+
+def remove_best_reply(reply_id: int):
+
+    update_query('''UPDATE topics SET best_reply_id = NULL WHERE best_reply_id = ?''', (reply_id,))
