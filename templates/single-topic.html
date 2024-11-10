@@ -174,4 +174,34 @@ document.querySelectorAll('.set-best-reply').forEach(button => {
     });
 });
 </script>
+
+<script>
+    // Save scroll position before reload
+    function saveScrollPosition() {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    }
+    
+    // Restore scroll position after reload
+    function restoreScrollPosition() {
+        const scrollPosition = sessionStorage.getItem('scrollPosition');
+        if (scrollPosition !== null) {
+            window.scrollTo(0, scrollPosition);
+        }
+    }
+</script>
+
+<script>
+// Add event listeners for upvote and downvote buttons
+document.querySelectorAll('.upvote, .downvote').forEach(button => {
+    button.addEventListener('click', function(event) {
+        // Save scroll position before the vote form submission
+        saveScrollPosition();
+    });
+});
+
+// When the page loads, restore the scroll position
+window.onload = restoreScrollPosition;
+</script>
+
+
 {% endblock %}

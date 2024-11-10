@@ -113,12 +113,12 @@ main {
 }
 
 /* Pagination */
-#pagination {
+.pagination {
     margin-top: 2rem;
     text-align: center;
 }
 
-#pagination a {
+.pagination a {
     padding: 0.5rem 1rem;
     text-decoration: none;
     color: #6a4eb4;
@@ -127,9 +127,9 @@ main {
     transition: background-color 0.3s, color 0.3s;
 }
 
-#pagination a:hover {
-    background-color: #f0f0f0;
-    color: #4c2882;
+.pagination a:hover {
+    background-color: #998bc0;
+    color: white;
 }
 
 /* Footer Styling */
