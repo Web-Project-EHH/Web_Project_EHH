@@ -10,9 +10,11 @@
             {% else %}
             <input type="text" name="username" placeholder="Enter username">
             {% endif %}
+            {% if get_user(request).is_admin %}
             <label for="is_privileged">Privileged:</label>
             <input type="checkbox" id="is_privileged" name="is_privileged" value="1">
             <br>
+            {% endif %}
             <button type="submit">Search</button>
         </form>
         {% if users %}

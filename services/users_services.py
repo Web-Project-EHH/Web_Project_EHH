@@ -113,7 +113,7 @@ def email_exists(email: str) -> bool:
     return bool(user)
 
 def get_users_by_username(username: str, is_privileged: bool = False):
-    sql = '''SELECT DISTINCT u.username
+    sql = '''SELECT DISTINCT u.user_id, u.username
              FROM users u
              LEFT JOIN users_categories_permissions ucp ON ucp.user_id = u.user_id 
              WHERE u.username LIKE ?'''

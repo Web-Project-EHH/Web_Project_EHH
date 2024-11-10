@@ -39,12 +39,15 @@ class UserRegistration(BaseModel):
 
 
 class UserSearch(BaseModel):
+
+    id: int
     username: str
 
     @classmethod
     def from_query_result(cls, query_result):
         return cls(
-            username=query_result[0]
+            id=query_result[0],
+            username=query_result[1]
         )
     
 
