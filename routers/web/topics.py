@@ -22,7 +22,7 @@ def create_topic_page(request: Request):
     return templates.TemplateResponse(
         name='create-topic.html',
         request=request,
-        context={'categories': categories_services.get_categories(limit=10000, current_user=common.auth.get_current_user(request.cookies.get('token')))}
+        context={'categories': categories_services.get_categories_with_write_access_only(user=common.auth.get_current_user(request.cookies.get('token')))}
     )
 
 #WORKS

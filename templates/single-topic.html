@@ -2,6 +2,7 @@
 {% block title %}{{ topic.title }}{% endblock %}
 {% block content %}
 <main>
+    {% if topic %}
     <section id="topic-details" style="padding: 20px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; margin-bottom: 20px;">
         <h2 style="margin-bottom: 10px;">{{ topic.title }}</h2>
         <p><strong>Created by:</strong> <a href="/users/{{topic.user_id}}"> {{get_user_by_id(topic.user_id).username if get_user_by_id(topic.user_id)}} </a></p>
@@ -99,6 +100,9 @@
             <button type="submit">Reply</button>
         </form>
     </div>
+    {% else %}
+        <p>Topic not found.</p>
+    {% endif %}
 </main>
 
 <script>

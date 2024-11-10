@@ -325,6 +325,9 @@ def get_by_id(category_id: int, current_user: User):
     if not exists(category_id):
         return None
     
+    if not current_user:
+        return None
+    
     if current_user.is_admin:
         
         category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
@@ -477,8 +480,8 @@ def category_create_form(name: str = Form(...), is_locked: bool = Form(False), i
     return CategoryCreate(name=name, is_locked=is_locked, is_private=is_private)
 
 
-def get_categories_write_access_only(user: User):
+def get_categories_with_write_access_only(user: User):
     categories = read_query('''SELECT c.category_id, c.name FROM categories c
                           JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id
-                          WHERE ucp.user_id = ? AND ucp.write_access = 2''', (user.id,))
+                          WHERE c.is_private = 0 or (c.is_private = 1 AND ucp.user_id = ? AND ucp.write_access = 2)''', (user.id,))
     return [CategoryResponse.from_query_result(*category) for category in categories] if categories else None

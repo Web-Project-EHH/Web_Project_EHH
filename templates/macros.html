@@ -15,7 +15,7 @@
                     <a href="/categories/"><li>Categories</li></a>
                     <a href="/topics/"><li>Topics</li></a>
                     <a href="/users/"><li>Users</li></a>
-                    <a href="/messages/"><li>Messages</li></a>
+                    <a href="/messages/"><li>Lobby</li></a>
                     {% if user %}
                     <li>Hello, <a href="/users/me/">{{ user.username }}</a></li>
                     <form action="/users/logout" method="post" style="display:inline;">
@@ -131,6 +131,11 @@
                         <td><a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a></td>
                     </tr>
                     {% endfor %}
+                    <td><div id="create_topic">
+                        <form id='create_topic_button' action="/topics/create" method="get">
+                            <button type="submit">Create New Topic</button>
+                        </form>
+                    </div></td>
                     {% if topics|length < per_page %}
                         {% for _ in range(per_page - topics|length) %}
                         <tr>
