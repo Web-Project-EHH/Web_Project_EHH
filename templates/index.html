@@ -1,10 +1,21 @@
 {% extends "base.html" %}
+
 {% block title %}Home - Forum{% endblock %}
+
 {% block content %}
 <main>
-    <section id="home">
-        <h2>Welcome to the Forun</h2>
-        <p>Almost the front page of the Internet!</p>
+    <section id="home"></section>
+
+    <section id="feed">
+        <h3>Latest Feed</h3>
+        <div class="feed-window">
+            {% for topic in topics['topics'] %}
+            <div class="feed-item">
+                <h4>{{ topic.title }}</h4>
+                <a href="/topics/{{ topic.topic_id }}/">Read More</a>
+            </div> <!-- Close each feed-item -->
+            {% endfor %}
+        </div>
     </section>
 </main>
 {% endblock %}
