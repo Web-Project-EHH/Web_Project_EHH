@@ -133,7 +133,7 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
 
     category_id = new_topic.category_id
 
-    if not users_services.check_user_access_level(user.id, category_id) == 2:
+    if categories_services.is_private(category_id) and users_services.check_user_access_level(user.id, category_id) != 2:
         return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
 
     if user is None:

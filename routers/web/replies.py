@@ -5,7 +5,7 @@ from common.exceptions import BadRequestException
 from common.template_config import CustomJinja2Templates
 from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID
 from data.models.user import User
-from services import replies_services, votes_services
+from services import replies_services, topics_services, votes_services
 from datetime import datetime
 import common.auth
 
@@ -85,18 +85,21 @@ def edit_reply(old_reply: ReplyEditID, new_reply: ReplyEdit,
 @router.delete('/{reply_id}/delete', response_model=None)
 def delete_reply(reply_id: int, request: Request):
 
-     current_user = common.auth.get_current_user(request.cookies.get('token'))
+    current_user = common.auth.get_current_user(request.cookies.get('token'))
 
-     reply = replies_services.get_reply_by_id(reply_id=reply_id)
+    reply = replies_services.get_reply_by_id(reply_id=reply_id)
 
-     if not current_user:
-         return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
-     
-     if not (current_user.id == reply.user_id or not current_user.is_admin):
-         return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
-     
-     replies_services.delete(reply_id, current_user)
-     
-     return RedirectResponse(url=f'/topics/{reply.topic_id}', status_code=303)
+    if not current_user:
+        return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
+    
+    if not (current_user.id == reply.user_id or not current_user.is_admin):
+        return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
+    
+    if replies_services.is_best_reply(reply_id):
+        topics_services.remove_best_reply(reply_id)
+    
+    replies_services.delete(reply_id, current_user)
+    
+    return RedirectResponse(url=f'/topics/{reply.topic_id}', status_code=303)
 
 
