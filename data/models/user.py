@@ -36,6 +36,16 @@ class UserRegistration(BaseModel):
     first_name: str
     last_name: str
     is_admin: bool = False
+
+
+class UserSearch(BaseModel):
+    username: str
+
+    @classmethod
+    def from_query_result(cls, query_result):
+        return cls(
+            username=query_result[0]
+        )
     
 
 class UserResponse(BaseModel):
