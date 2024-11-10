@@ -90,6 +90,12 @@ def get_topic_replies(
     """
     current_user = common.auth.get_current_user(request.cookies.get('token'))
 
+    if not current_user:
+        return templates.TemplateResponse(
+            name='topics.html',
+            context={'request': request, 'error': 'You must be logged in to view topics.'}
+        )
+
     token = request.cookies.get('token')
     
     topic = topics_services.fetch_topic_by_id(topic_id)

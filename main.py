@@ -17,11 +17,13 @@ from routers.web.topics import router as web_topics_router
 from routers.web.users import router as web_users_router
 from common.template_config import CustomJinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.sessions import SessionMiddleware
 
 import uvicorn
 
 app = FastAPI()
 templates = CustomJinja2Templates(directory="templates")
+app.add_middleware(SessionMiddleware, secret_key="secret")
 
 # app.include_router(admin_router)
 app.include_router(users_router)
