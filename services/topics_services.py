@@ -51,15 +51,16 @@ def fetch_all_topics(
         FROM topics t
         JOIN users u ON t.user_id = u.user_id
         JOIN categories c ON t.category_id = c.category_id
-        JOIN users_categories_permissions ucp ON ucp.category_id = c.category_id'''
+        LEFT JOIN users_categories_permissions ucp ON ucp.category_id = c.category_id AND ucp.user_id = ?'''
     )
 
     if not current_user:
         return None
+    
+    params.append(current_user.id)
 
     if not current_user.is_admin:
-        filters.append('(c.is_private = 0 or (c.is_private = 1 AND ucp.user_id = ? AND ucp.write_access > 0))')
-        params.append(current_user.id)
+        filters.append('(c.is_private = 0 or (c.is_private = 1 AND ucp.write_access > 0))')
 
     if search:
         filters.append('t.title LIKE ?')
