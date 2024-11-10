@@ -66,6 +66,9 @@ def get_category_by_id(category_id: int, request: Request = None):
 
     category_data = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 
+    if category_data is None:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
+
     topics = category_data['Topics']
 
     category = category_data['Category']
@@ -156,25 +159,28 @@ def make_category_private(category_id: int, request: Request = None):
 
 
 @router.delete('/{category_id}', response_model=None)
-def delete_category(category_id: int, delete_topics: bool = Query(False), request: Request = None):
+async def delete_category(category_id: int, request: Request = None):
 
     user = common.auth.get_current_user(request.cookies.get('token'))
 
     if not user.is_admin:
         return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
 
-    try:
-        
-        result = categories_services.delete(category_id, delete_topics)
-        
-        if not result:
-            raise BadRequestException(detail='Category could not be deleted')
+    payload = await request.json()
 
-        elif result == 'everything deleted':
-            return JSONResponse({'message': 'Category and topics deleted'}, status_code=200)
-                
-        elif result == 'only category deleted':
-            return JSONResponse({'message': 'Category deleted'}, status_code=200)
+    delete_topics = payload.get('delete_topics', False)
+
+        
+    result = categories_services.delete(category_id, delete_topics)
+    
+    if not result:
+        raise BadRequestException(detail='Category could not be deleted')
+
+    elif result == 'everything deleted':
+        return JSONResponse({'message': 'Category and topics deleted'}, status_code=200)
             
-    except IntegrityError:
-        raise ForbiddenException(detail='Cannot delete a category that includes topics.')
+    elif result == 'only category deleted':
+        return JSONResponse({'message': 'Category deleted'}, status_code=200)
+            
+    # except IntegrityError:
+    #     raise ForbiddenException(detail='Cannot delete a category that includes topics.')

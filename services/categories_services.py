@@ -3,7 +3,7 @@ from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse, CategoryResponseAdmin
 from typing import List
 from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
-from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
+from data.models.topic import TopicCategoryResponseAdmin
 from data.models.user import User
 
 
@@ -135,6 +135,8 @@ def delete(category_id: int, delete_topics: bool = False) ->  str | None:
     delete_from_topics = None
     
     if delete_topics and topics: # If delete topics was selected, check if any exist and then delete them
+
+        remove_best_replies = update_query('''UPDATE topics SET best_reply_id = NULL WHERE category_id = ?''', (category_id,))
 
         delete_from_replies = update_query('''DELETE FROM replies
                         WHERE topic_id IN (SELECT t.topic_id 
