@@ -17,10 +17,28 @@ templates = Jinja2Templates(directory="templates")
 
 @dataclass
 class ConnectionManager:
+
+  """
+    Manages WebSocket connections.
+
+    Attributes:
+        active_connections (dict): A dictionary of active WebSocket connections.
+  """
+
   def __init__(self) -> None:
+    """
+    Initializes the ConnectionManager with an empty dictionary of active connections.
+    """
     self.active_connections: dict = {}
 
   async def connect(self, websocket: WebSocket):
+
+    """
+    Accepts a new WebSocket connection and adds it to the active connections.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection to add.
+    """
     await websocket.accept()
     id = str(uuid.uuid4())
     self.active_connections[id] = websocket
@@ -28,9 +46,27 @@ class ConnectionManager:
     await self.send_message(websocket, json.dumps({"isMe": True, "data": "Have joined!!", "username": "You", "time": datetime.now().strftime('%H:%M:%S')}))
 
   async def send_message(self, ws: WebSocket, message: str):
+
+    """
+    Sends a message to a specific WebSocket connection.
+
+    Args:
+        ws (WebSocket): The WebSocket connection to send the message to.
+        message (str): The message to send.
+    """
     await ws.send_text(message)
 
   def find_connection_id(self, websocket: WebSocket):
+
+    """
+    Finds the connection ID for a given WebSocket connection.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection to find the ID for.
+
+    Returns:
+        str: The connection ID.
+    """
     websocket_list = list(self.active_connections.values())
     id_list = list(self.active_connections.keys())
 
@@ -38,6 +74,14 @@ class ConnectionManager:
     return id_list[pos]
 
   async def broadcast(self, webSocket: WebSocket, data: str):
+
+    """
+    Broadcasts a message to all active WebSocket connections.
+
+    Args:
+        webSocket (WebSocket): The WebSocket connection that sent the message.
+        data (str): The message data to broadcast.
+    """
     decoded_data = json.loads(data)
     timestamp = datetime.now().strftime('%H:%M:%S') 
 
@@ -59,6 +103,16 @@ class ConnectionManager:
         }))
 
   def disconnect(self, websocket: WebSocket):
+
+    """
+    Disconnects a WebSocket connection and removes it from the active connections.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection to disconnect.
+
+    Returns:
+        str: The ID of the disconnected connection.
+    """
     id = self.find_connection_id(websocket)
     del self.active_connections[id]
 
@@ -70,10 +124,30 @@ manager = ConnectionManager()
 
 @router.get("/", response_class=HTMLResponse)
 def get_room(request: Request):
+
+  """
+  Renders the chat room HTML page.
+
+  Args:
+      request (Request): The request object.
+
+  Returns:
+      TemplateResponse: The rendered HTML page.
+  """
   return templates.TemplateResponse("message.html", {"request": request})
 
 @router.websocket("/message")
 async def websocket_endpoint(websocket: WebSocket):
+
+  """
+    Handles WebSocket connections for the chat room.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection.
+
+    Raises:
+        WebSocketDisconnect: If the WebSocket connection is disconnected.
+    """
   # Accept the connection from the client.
   await manager.connect(websocket)
 

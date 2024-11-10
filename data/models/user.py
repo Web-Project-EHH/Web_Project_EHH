@@ -4,6 +4,23 @@ from pydantic import BaseModel, Field, EmailStr
 
 
 class User(BaseModel):
+
+    """
+    Represents a user in the system.
+
+    Attributes:
+        id (Optional[int]): The unique identifier of the user.
+        username (str): The username of the user.
+        password (str): The password of the user.
+        email (EmailStr): The email address of the user.
+        first_name (Optional[str]): The first name of the user.
+        last_name (Optional[str]): The last name of the user.
+        created_at (Optional[datetime.datetime]): The timestamp when the user was created.
+        is_admin (bool): Indicates if the user has admin privileges.
+        is_deleted (bool): Indicates if the user is deleted.
+        bio (Optional[str]): The biography of the user.
+    """ 
+
     id: Optional[int] = None
     username: str = Field(..., min_length=2, max_length=50)
     password: str
@@ -20,7 +37,13 @@ class User(BaseModel):
         return cls(**kwargs)
     
 
+
+
 class UserLogin(BaseModel):
+
+    """
+    Represents the login information for a user.
+    """ 
     id: Optional[int] = None
     username: str = Field(..., min_length=2, max_length=20)
     password: str 
@@ -28,7 +51,14 @@ class UserLogin(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
+
+
+
 class UserRegistration(BaseModel):
+
+    """
+    Represents the registration information for a new user.
+    """
     username: str = Field(..., min_length=2, max_length=20)
     password: str   
     confirm_password: str
@@ -39,6 +69,10 @@ class UserRegistration(BaseModel):
     
 
 class UserResponse(BaseModel):
+
+    """
+    Represents the response data for a user.
+    """
     id: int
     username: str
     email: EmailStr
@@ -50,6 +84,16 @@ class UserResponse(BaseModel):
 
     @classmethod
     def from_query_result(cls, query_result):
+
+        """
+        Creates a UserResponse instance from a query result.
+
+        Args:
+            query_result (tuple): The result of a database query.
+
+        Returns:
+            UserResponse: An instance of the UserResponse class.
+         """
         return cls(
             id=query_result[0],
             username=query_result[1],
@@ -60,11 +104,23 @@ class UserResponse(BaseModel):
         )
 
 class TokenResponse(BaseModel):
+
+    """
+    Represents the token response for authentication.
+
+    Attributes:
+        access_token (str): The access token.
+        token_type (str): The type of the token.
+    """
     access_token: str
     token_type: str
 
 
 class UserInfo(BaseModel):
+
+    """
+    Represents the basic information of a user.
+    """
     username: str
     email: EmailStr
     first_name: Optional[str] = None
@@ -72,6 +128,13 @@ class UserInfo(BaseModel):
 
     @classmethod
     def from_query_result(cls, username, email, first_name, last_name):
+
+        """
+        Creates a UserInfo instance from a query result.
+
+        Returns:
+            UserInfo: An instance of the UserInfo class.
+        """
         return cls(
             username=username,
             email=email,

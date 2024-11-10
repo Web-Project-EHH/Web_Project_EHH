@@ -9,6 +9,16 @@ from mariadb import IntegrityError
 
 
 def create_user(user: User) -> int:
+
+    """
+    Inserts a new user into the database.
+
+    Args:
+        user (User): The user information to insert.
+
+    Returns:
+        int: The ID of the newly created user.
+    """
     return insert_query(
         'INSERT INTO users (username, password, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
         (user.username, user.password, user.email, user.first_name, user.last_name)
@@ -16,6 +26,16 @@ def create_user(user: User) -> int:
 
 
 def get_user(username: str) -> UserResponse:
+
+    """
+    Retrieves a user from the database by username.
+
+    Args:
+        username (str): The username of the user to retrieve.
+
+    Returns:
+        UserResponse: The user information, or None if the user does not exist.
+    """
     data = read_query(
         '''SELECT user_id, username, password, email, first_name, 
            last_name, is_admin, is_deleted, bio 
@@ -67,6 +87,13 @@ def get_user_by_id(user_id: int) -> User | None:
 
 
 def get_users():
+
+    """
+    Retrieves all users from the database.
+
+    Returns:
+        list[UserResponse]: A list of UserResponse objects representing all users.
+    """
     data = read_query('SELECT * FROM users')
     return [UserResponse.from_query_result(row) for row in data]
     
@@ -100,6 +127,15 @@ def has_voted(user_id: int, reply_id: int) -> Vote | None:
 
 def exists(user_id: int) -> bool:
 
+    """
+    Checks if a user exists in the database by user ID.
+
+    Args:
+        user_id (int): The ID of the user to check.
+
+    Returns:
+        bool: True if the user exists, False otherwise.
+    """
     user = read_query('''SELECT user_id FROM users WHERE user_id = ?''', (user_id,))
 
     return bool(user)
