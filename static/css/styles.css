@@ -304,3 +304,51 @@ section#unauthorized p {
     word-wrap: break-word; /* Breaks long words to prevent overflow */
     overflow-wrap: break-word; /* Ensures long words break */
 }
+
+
+#feed {
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.feed-window {
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    padding: 15px;
+}
+
+.feed-item {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.feed-item h4 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.feed-item a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.feed-item a:hover {
+    color: #0056b3;
+}
+
+h3 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+}

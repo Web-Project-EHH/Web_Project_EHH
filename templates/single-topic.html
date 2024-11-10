@@ -28,7 +28,9 @@
                         <a href="/users/{{reply.user_id}}"><p><strong>{{ get_user_by_id(reply.user_id).username }}</a></strong> said:</p>
                         <p class="reply-text" style="width: 100%; white-space: pre-wrap; word-wrap: break-word; max-width: 100%; overflow-wrap: break-word; margin-top: 5px; white-space: pre-wrap;">{{ reply.text }}</p>
                             {% if get_user(request).id == topic.user_id %}
+                            {% if reply.id != topic.best_reply_id %}
                                 <button class="set-best-reply" data-reply-id="{{ reply.id }}" style="margin-top: 10px; background-color: #5cb85c; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 3px;">Select as Best Reply</button>
+                            {% endif %}
                             {% endif %}
                             {% if get_user(request).id == reply.user_id %}
                                 <button class="delete-reply" data-reply-id="{{ reply.id }}" style="margin-top: 10px; background-color: #d9534f; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 3px;">Delete Reply</button>
@@ -164,7 +166,6 @@ document.querySelectorAll('.set-best-reply').forEach(button => {
                 alert(errorData.error || 'An error occurred');
             } else {
                 // Change button text and disable it to indicate it was selected
-                this.innerText = 'Best Reply Selected';
                 this.disabled = true;
                 location.reload();
             }
