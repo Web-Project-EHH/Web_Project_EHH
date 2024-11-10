@@ -24,7 +24,7 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    name: Optional[str] = Query(default=None), 
                    sort_by: Literal["name", "category_id"] | None = Query(default='name'), 
                    sort: Literal["asc", "desc",] | None = Query(default='asc'),
-                   limit: int = Query(default=10, ge=1),
+                   limit: int = Query(default=15, ge=1),
                    offset: int = Query(default=0, ge=0), request: Request = None,
                    page: int = Query(default=1, ge=1)):
     

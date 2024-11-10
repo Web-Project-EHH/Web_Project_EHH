@@ -38,42 +38,20 @@
 
     {% macro load_categories(categories=None, user=None, page=None, total_pages=None, limit=None) %}
         {% if user %}
- <section id="categories">
-    {% if categories %}
-        <h2>Categories</h2>
-        <table>
-            <tr>
-                <th>Name</th>
-            </tr>
-            {% if is_list(categories) %}
-                {% for category in categories %}
-                    <tr>
-                        <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
-                    </tr>
-                {% endfor %}
-                {% if categories|length < limit %}
-                    {% for _ in range(limit - categories|length) %}
-                        <tr>
-                            <td><br></td>
-                        </tr>
+        <section id="categories">
+            {% if categories %}
+                <h2>Categories</h2>
+                <div class="categories-container">
+                    {% for category in categories %}
+                        <div class="category-box">
+                            <a href="/categories/{{ category.id }}/">{{ category.name }}</a>
+                        </div>
                     {% endfor %}
-                {% endif %}
+                </div>
             {% else %}
-                <tr>
-                    <td><a href="/categories/{{ categories.id }}/">{{ categories.name }}</a></td>
-                </tr>
-                {% for _ in range(limit - 1) %}
-                    <tr>
-                        <td><br></td>
-                    </tr>
-                {% endfor %}
+                <p>{{ error }}</p>
             {% endif %}
-        </table>
-    {% else %}
-        <p>{{ error }}</p>
-    {% endif %}
-</section>
-
+        </section>
         
         
         
@@ -122,28 +100,20 @@
         <section id="topics">
             {% if topics %}
                 <h2>Topics</h2>
-                <table>
-                    <tr>
-                        <th>Title</th>
-                    </tr>
+                <div id="topics-container">
                     {% for topic in topics %}
-                    <tr>
-                        <td><a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a></td>
-                    </tr>
+                        <div class="topic-box">
+                            <a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a>
+                        </div>
                     {% endfor %}
-                    <td><div id="create_topic">
+                    <div id="create_topic">
                         <form id='create_topic_button' action="/topics/create" method="get">
                             <button type="submit">Create New Topic</button>
                         </form>
-                    </div></td>
-                    {% if topics|length < per_page %}
-                        {% for _ in range(per_page - topics|length) %}
-                        <tr>
-                            <td><br></td>
-                        </tr>
-                        {% endfor %}
-                    {% endif %}
-                </table>
+                    </div>
+                </div>
+
+
 
                 {% if current_page and total_pages and request %}
                 <div class="pagination" style="margin-top: 20px; text-align: center;">
