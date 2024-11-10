@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel, Field
 from data.models.topic import PositiveInt
 
@@ -32,3 +33,8 @@ class MessageText(BaseModel):
     text: str - The text of the message (min length 1)
     """
     text: str = Field(..., min_length=1)
+
+class MessageCreate(BaseModel):
+    text: str
+    sender_id: int
+    receiver_id: int

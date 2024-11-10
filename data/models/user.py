@@ -78,6 +78,10 @@ class UserInfo(BaseModel):
             first_name=first_name,
             last_name=last_name
         )
+    
+
+class UserAuthDep(BaseModel):
+    user_id: Optional[int] = None      
 
 class UserProfileUpdate(BaseModel):
     """Model for updating user profile information"""
