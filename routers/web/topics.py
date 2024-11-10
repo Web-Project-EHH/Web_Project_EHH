@@ -72,7 +72,8 @@ def get_topics(
             'categories': categories,
             'current_page': topics['current_page'],
             'total_pages': topics['total_pages'],
-            'request': request
+            'request': request,
+            'per_page': per_page,
         }
     )
 

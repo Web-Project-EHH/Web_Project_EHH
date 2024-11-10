@@ -83,7 +83,7 @@
                 </form>
             </div>
             {% endif %}
-            <section id="pagination">
+            <section class="pagination">
                 <div>
                     {% if page > 1 %}
                     <a href="/categories?page={{ page - 1 }}">Previous</a>
@@ -116,7 +116,7 @@
         </section>
     {% endmacro %}
 
-    {% macro load_topics(topics=None, user=None, current_page=None, total_pages=None, request=None) %}
+    {% macro load_topics(topics=None, user=None, current_page=None, total_pages=None, request=None, per_page=None) %}
     {% if user %}
         <section id="topics">
             {% if topics %}
@@ -130,26 +130,35 @@
                         <td><a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a></td>
                     </tr>
                     {% endfor %}
+                    {% if topics|length < per_page %}
+                        {% for _ in range(per_page - topics|length) %}
+                        <tr>
+                            <td><br></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
                 </table>
 
                 {% if current_page and total_pages and request %}
                 <div class="pagination" style="margin-top: 20px; text-align: center;">
                     {% if current_page > 1 %}
-                        <a href="{{ request.url.include_query_params(page=current_page-1) }}" 
-                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                        <a href="{{ request.url.include_query_params(page=current_page-1) }}">
                             Previous
                         </a>
+                    {%else%}
+                        <span>Previous</span>
                     {% endif %}
                     
                     <span style="margin: 0 10px;">
-                        Page {{ current_page }} of {{ total_pages }}
+                         {{ current_page }}/{{ total_pages }}
                     </span>
 
                     {% if current_page < total_pages %}
-                        <a href="{{ request.url.include_query_params(page=current_page+1) }}"
-                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                        <a href="{{ request.url.include_query_params(page=current_page+1) }}">
                             Next
                         </a>
+                    {%else%}
+                        <span>Next</span>
                     {% endif %}
                 </div>
                 {% endif %}
