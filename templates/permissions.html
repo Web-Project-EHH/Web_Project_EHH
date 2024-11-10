@@ -29,6 +29,11 @@
                 {% endif %}
                 {% endfor %}
             </table>
+            {% if request.session.get('flash') %}
+<div class="alert alert-success" style="color: green;">
+    {{ request.session.pop('flash') }}
+</div>
+{% endif %}
             <button type="submit">Update Permissions</button>
         </form>
     </section>

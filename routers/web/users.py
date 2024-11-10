@@ -128,7 +128,7 @@ def logout(request: Request = None):
 
 
 @router.get('/search', response_model=None)
-def search_users(request: Request, username: str = Query(...)):
+def search_users(request: Request, username: str = Query(...), is_privileged: bool = Query(False)):
 
     current_user = auth.get_current_user(request.cookies.get('token'))
 
@@ -141,7 +141,7 @@ def search_users(request: Request, username: str = Query(...)):
             }
         )
 
-    users = users_services.get_users_by_username(username)
+    users = users_services.get_users_by_username(username, is_privileged)
     return templates.TemplateResponse(
         request=request, 
         name="users.html", 
@@ -202,6 +202,8 @@ async def update_permissions(user_id: int, request: Request):
     for category_id, permission in permissions.items():
         access_level = permission.get('access_level')
         users_services.update_user_permissions(user_id=user_id, category_id=category_id, access_level=access_level)
+
+    request.session['flash'] = "Permissions have been updated successfully."
 
     return RedirectResponse(url=f'/users/{user_id}/permissions', status_code=302)
 

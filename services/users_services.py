@@ -112,9 +112,22 @@ def email_exists(email: str) -> bool:
     user = read_query('''SELECT email FROM users WHERE email = ?''', (email,))
     return bool(user)
 
-def get_users_by_username(username: str):
-    data = read_query('SELECT * FROM users WHERE username LIKE ?', (f'%{username}%',))
-    return [UserResponse.from_query_result(row) for row in data]
+def get_users_by_username(username: str, is_privileged: bool = False):
+    sql = '''SELECT DISTINCT u.user_id, u.username, u.email, u.first_name, u.last_name, u.is_admin
+             FROM users u
+             LEFT JOIN users_categories_permissions ucp ON ucp.user_id = u.user_id 
+             WHERE u.username LIKE ?'''
+
+    params = [f'%{username}%']
+
+    if is_privileged:
+        sql += ''' AND ucp.write_access > 0'''
+
+    data = read_query(sql, params)
+
+    return [UserResponse.from_query_result(row) for row in data] if data else None
+
+
 
 def delete_user(user_id: int):
     return insert_query('DELETE FROM users WHERE user_id = ?', (user_id,))

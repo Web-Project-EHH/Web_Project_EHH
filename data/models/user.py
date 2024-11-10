@@ -53,10 +53,10 @@ class UserResponse(BaseModel):
         return cls(
             id=query_result[0],
             username=query_result[1],
-            email=query_result[3],
-            first_name= query_result[4],
-            last_name= query_result[5],
-            is_admin= query_result[6],
+            email=query_result[2],
+            first_name= query_result[3],
+            last_name= query_result[4],
+            is_admin= query_result[5],
         )
 
 class TokenResponse(BaseModel):
