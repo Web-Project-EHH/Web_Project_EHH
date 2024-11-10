@@ -1,6 +1,6 @@
 from fastapi import Form
 from common.exceptions import NotFoundException
-from data.models.user import User, UserProfileUpdate, UserRegistration, UserResponse
+from data.models.user import User, UserProfileUpdate, UserRegistration, UserResponse, UserSearch
 from services import replies_services
 from data.database import read_query, insert_query, update_query
 from data.models.vote import Vote
@@ -113,7 +113,7 @@ def email_exists(email: str) -> bool:
     return bool(user)
 
 def get_users_by_username(username: str, is_privileged: bool = False):
-    sql = '''SELECT DISTINCT u.user_id, u.username, u.email, u.first_name, u.last_name, u.is_admin
+    sql = '''SELECT DISTINCT u.username
              FROM users u
              LEFT JOIN users_categories_permissions ucp ON ucp.user_id = u.user_id 
              WHERE u.username LIKE ?'''
@@ -125,7 +125,7 @@ def get_users_by_username(username: str, is_privileged: bool = False):
 
     data = read_query(sql, params)
 
-    return [UserResponse.from_query_result(row) for row in data] if data else None
+    return [UserSearch.from_query_result(row) for row in data] if data else None
 
 
 
