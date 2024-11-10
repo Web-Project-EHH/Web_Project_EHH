@@ -481,7 +481,15 @@ def category_create_form(name: str = Form(...), is_locked: bool = Form(False), i
 
 
 def get_categories_with_write_access_only(user: User):
-    categories = read_query('''SELECT c.category_id, c.name FROM categories c
-                          JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id
-                          WHERE c.is_private = 0 or (c.is_private = 1 AND ucp.user_id = ? AND ucp.write_access = 2)''', (user.id,))
+
+    if not user.is_admin:
+        
+        categories = read_query('''SELECT c.category_id, c.name FROM categories c
+                            LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id AND ucp.user_id = ?
+                            WHERE c.is_private = 0 or (c.is_private = 1 AND ucp.write_access = 2)''', (user.id,))
+        
+    else:
+        
+        categories = read_query('''SELECT category_id, name FROM categories''')
+
     return [CategoryResponse.from_query_result(*category) for category in categories] if categories else None
