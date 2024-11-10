@@ -46,7 +46,7 @@ def fetch_all_topics(
     """
     params, filters = [], []
     sql = (
-        '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, 
+        '''SELECT DISTINCT t.topic_id, t.title, t.user_id, u.username, t.is_locked, 
            t.best_reply_id, t.category_id, c.name
         FROM topics t
         JOIN users u ON t.user_id = u.user_id
