@@ -41,7 +41,7 @@ def get_topics(
         category=category,
         status=status,
         sort=sort,
-        sort_by=sort_by
+        sort_by=sort_by,
     )
 
     if not topics:

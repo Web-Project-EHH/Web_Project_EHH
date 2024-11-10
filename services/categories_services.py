@@ -344,6 +344,7 @@ def get_by_id(category_id: int, current_user: User):
         
             topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
                         WHERE category_id = ?''', (category_id,))
+            
     
             return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
                     'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
@@ -474,3 +475,10 @@ def count_all_categories(current_user: User) -> int:
 
 def category_create_form(name: str = Form(...), is_locked: bool = Form(False), is_private: bool = Form(False)):
     return CategoryCreate(name=name, is_locked=is_locked, is_private=is_private)
+
+
+def get_categories_write_access_only(user: User):
+    categories = read_query('''SELECT c.category_id, c.name FROM categories c
+                          JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id
+                          WHERE ucp.user_id = ? AND ucp.write_access = 2''', (user.id,))
+    return [CategoryResponse.from_query_result(*category) for category in categories] if categories else None

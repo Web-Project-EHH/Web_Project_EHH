@@ -7,6 +7,8 @@ from data.database import read_query, update_query, insert_query
 import common.auth
 import logging
 
+from data.models.user import User
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -30,7 +32,8 @@ def fetch_all_topics(
         sort: str = None,
         sort_by: str = None,
         page: int = 1,
-        per_page: int = 10
+        per_page: int = 10,
+        current_user: User = None
     ):
     """
     Fetches all topics based on the provided filters and sorting options.
@@ -47,8 +50,16 @@ def fetch_all_topics(
            t.best_reply_id, t.category_id, c.name
         FROM topics t
         JOIN users u ON t.user_id = u.user_id
-        JOIN categories c ON t.category_id = c.category_id '''
+        JOIN categories c ON t.category_id = c.category_id
+        JOIN users_categories_permissions ucp ON ucp.category_id = c.category_id'''
     )
+
+    if not current_user:
+        return None
+
+    if not current_user.is_admin:
+        filters.append('(c.is_private = 0 or (c.is_private = 1 AND ucp.user_id = ? AND ucp.write_access > 0))')
+        params.append(current_user.id)
 
     if search:
         filters.append('t.title LIKE ?')
