@@ -328,29 +328,16 @@ def get_by_id(category_id: int, current_user: User):
     if not current_user:
         return None
     
-    if current_user.is_admin:
         
-        category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
-                          WHERE category_id = ?''', (category_id,))
-    
-        topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
+    category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
                         WHERE category_id = ?''', (category_id,))
-        
-        return {'Category': Category.from_query_result(*category[0] if category else None), 
-            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else None}
-        
-    else:
-        category = read_query('''SELECT category_id, name FROM categories
-                          WHERE category_id = ?''', (category_id,))
-        
-        if category:
-        
-            topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
-                        WHERE category_id = ?''', (category_id,))
-            
+
+    topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
+                    WHERE category_id = ?''', (category_id,))
     
-            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
-                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
+    return {'Category': Category.from_query_result(*category[0] if category else None), 
+        'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else None}
+        
         
 
 def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_user: User) -> bool:
@@ -486,7 +473,8 @@ def get_categories_with_write_access_only(user: User):
         
         categories = read_query('''SELECT c.category_id, c.name FROM categories c
                             LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id AND ucp.user_id = ?
-                            WHERE c.is_private = 0 or (c.is_private = 1 AND ucp.write_access = 2)''', (user.id,))
+                            WHERE c.is_locked = 0 AND (c.is_private = 0 or (c.is_private = 1 AND ucp.write_access = 2))
+                            ORDER by c.name''', (user.id,))
         
     else:
         

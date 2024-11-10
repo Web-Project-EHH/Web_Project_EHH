@@ -135,7 +135,7 @@ def delete_user(user_id: int):
 def check_user_access_level(user_id: int, category_id: int) -> int:
     data = read_query('SELECT write_access FROM users_categories_permissions WHERE user_id = ? AND category_id = ?', (user_id, category_id))
     if not data:
-        return 2
+        return 0
     return data[0][0]
 
 def update_user_permissions(user_id: int, category_id: int, access_level: int):

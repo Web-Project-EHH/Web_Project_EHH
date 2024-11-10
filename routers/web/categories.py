@@ -63,19 +63,21 @@ def get_category_by_id(category_id: int, request: Request = None):
     if not current_user:
         return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
 
-    access_level = users_services.check_user_access_level(user_id=current_user.id, category_id=category_id)
-    print(access_level)
 
-    if not current_user.is_admin: 
+    category_data = categories_services.get_by_id(category_id=category_id, current_user=current_user)
+
+    topics = category_data['Topics']
+
+    category = category_data['Category']
+
+    if category.is_private and not current_user.is_admin: 
         if not users_services.check_user_access_level(user_id=current_user.id, category_id=category_id) > 0 :
             return templates.TemplateResponse(name='categories.html', context={'error': 'Not authorised to see this category'}, request=request)
-
-    category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 
     if not category:
         return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
     
-    return templates.TemplateResponse(name='single-category.html', context={'category': category['Category'], 'topics': category['Topics'], 'per_page': per_page}, request=request)
+    return templates.TemplateResponse(name='single-category.html', context={'category': category, 'topics': topics, 'per_page': per_page}, request=request)
 
 
 @router.post('/create', response_model=None)
