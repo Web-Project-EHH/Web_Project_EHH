@@ -6,6 +6,7 @@
 <main>
     <section id="home"></section>
 
+    {% if get_user(request) %}
     <section id="feed">
         <h3>Latest Feed</h3>
         <div class="feed-window">
@@ -17,5 +18,9 @@
             {% endfor %}
         </div>
     </section>
+    {% else %}
+    <h3>Welcome to the Forum</h3>
+    <p>Almost the front page of the Internet!</p>
+    {% endif %}
 </main>
 {% endblock %}

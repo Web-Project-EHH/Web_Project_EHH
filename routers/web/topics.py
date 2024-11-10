@@ -61,7 +61,8 @@ def get_topics(
         sort=sort,
         sort_by=sort_by,
         page=page,
-        per_page=per_page
+        per_page=per_page,
+        current_user=current_user
     )
 
     return templates.TemplateResponse(

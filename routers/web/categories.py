@@ -58,6 +58,8 @@ def get_category_by_id(category_id: int, request: Request = None):
 
     current_user = common.auth.get_current_user(request.cookies.get('token'))
 
+    per_page = 10
+
     if not current_user:
         return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
 
@@ -73,7 +75,7 @@ def get_category_by_id(category_id: int, request: Request = None):
     if not category:
         return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
     
-    return templates.TemplateResponse(name='single-category.html', context={'category': category['Category'], 'topics': category['Topics']}, request=request)
+    return templates.TemplateResponse(name='single-category.html', context={'category': category['Category'], 'topics': category['Topics'], 'per_page': per_page}, request=request)
 
 
 @router.post('/create', response_model=None)
