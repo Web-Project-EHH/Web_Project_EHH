@@ -1,13 +1,13 @@
 import re
-from fastapi import APIRouter, Body, Form, HTTPException, Query, Request, Depends
+from fastapi import APIRouter, Body, HTTPException, Query, Request, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 # from data.models.category import Category
-from data.models.reply import ReplyCreate, ReplyCreateWeb
+from data.models.reply import ReplyCreateWeb
 from services import categories_services, replies_services, topics_services, users_services
 from typing import Optional
 import common.auth
 from common.exceptions import BadRequestException, ForbiddenException
-from data.models.topic import TopicCreate, TopicBestReplyUpdate
+from data.models.topic import TopicCreate
 from services.topics_services import fetch_all_topics, verify_topic_owner
 from common.template_config import CustomJinja2Templates
 from mariadb import IntegrityError
@@ -22,7 +22,7 @@ def create_topic_page(request: Request):
     return templates.TemplateResponse(
         name='create-topic.html',
         request=request,
-        context={'categories': categories_services.get_categories(limit=10000, current_user=common.auth.get_current_user(request.cookies.get('token')))}
+        context={'categories': categories_services.get_categories_with_write_access_only(user=common.auth.get_current_user(request.cookies.get('token')))}
     )
 
 #WORKS
@@ -51,7 +51,7 @@ def get_topics(
             }
         )
 
-    categories = categories_services.get_categories(limit=10000, current_user=current_user)
+    categories = categories_services.get_categories(sort_by='name', limit=10000, current_user=current_user)
     
     topics = fetch_all_topics(
         search=search,
@@ -61,7 +61,8 @@ def get_topics(
         sort=sort,
         sort_by=sort_by,
         page=page,
-        per_page=per_page
+        per_page=per_page,
+        current_user=current_user
     )
 
     return templates.TemplateResponse(
@@ -72,7 +73,8 @@ def get_topics(
             'categories': categories,
             'current_page': topics['current_page'],
             'total_pages': topics['total_pages'],
-            'request': request
+            'request': request,
+            'per_page': per_page,
         }
     )
 
@@ -87,6 +89,12 @@ def get_topic_replies(
     Fetches the details of a specific topic including its replies.
     """
     current_user = common.auth.get_current_user(request.cookies.get('token'))
+
+    if not current_user:
+        return templates.TemplateResponse(
+            name='topics.html',
+            context={'request': request, 'error': 'You must be logged in to view topics.'}
+        )
 
     token = request.cookies.get('token')
     
@@ -125,7 +133,7 @@ def create_topic(new_topic: TopicCreate = Depends(topics_services.topic_create_f
 
     category_id = new_topic.category_id
 
-    if not users_services.check_user_access_level(user.id, category_id) == 2:
+    if categories_services.is_private(category_id) and users_services.check_user_access_level(user.id, category_id) != 2:
         return templates.TemplateResponse(name='error.html', context={'error': 'User not authorised'}, request=request)
 
     if user is None:

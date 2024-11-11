@@ -1,11 +1,12 @@
 from __future__ import annotations
-from fastapi import Form, HTTPException, Query, Request
+from fastapi import Form, HTTPException
 from pydantic import ValidationError
 from data.models.reply import Reply
 from data.models.topic import TopicResponse, TopicCreate
 from data.database import read_query, update_query, insert_query
-import common.auth
 import logging
+
+from data.models.user import User
 
 logging.basicConfig(level=logging.INFO)
 
@@ -30,7 +31,8 @@ def fetch_all_topics(
         sort: str = None,
         sort_by: str = None,
         page: int = 1,
-        per_page: int = 10
+        per_page: int = 10,
+        current_user: User = None
     ):
     """
     Fetches all topics based on the provided filters and sorting options.
@@ -43,12 +45,21 @@ def fetch_all_topics(
     """
     params, filters = [], []
     sql = (
-        '''SELECT t.topic_id, t.title, t.user_id, u.username, t.is_locked, 
+        '''SELECT DISTINCT t.topic_id, t.title, t.user_id, u.username, t.is_locked, 
            t.best_reply_id, t.category_id, c.name
         FROM topics t
         JOIN users u ON t.user_id = u.user_id
-        JOIN categories c ON t.category_id = c.category_id '''
+        JOIN categories c ON t.category_id = c.category_id
+        LEFT JOIN users_categories_permissions ucp ON ucp.category_id = c.category_id AND ucp.user_id = ?'''
     )
+
+    if not current_user:
+        return None
+    
+    params.append(current_user.id)
+
+    if not current_user.is_admin:
+        filters.append('(c.is_private = 0 or (c.is_private = 1 AND ucp.write_access > 0))')
 
     if search:
         filters.append('t.title LIKE ?')
@@ -269,3 +280,7 @@ def topic_create_form(title: str = Form(...), text: str = Form(...), category_id
         error_messages = "; ".join([f"{err['loc'][0]}: {err['msg']}" for err in exc.errors()])
         raise HTTPException(status_code=400, detail=f"{error_messages}")
 
+
+def remove_best_reply(reply_id: int):
+
+    update_query('''UPDATE topics SET best_reply_id = NULL WHERE best_reply_id = ?''', (reply_id,))

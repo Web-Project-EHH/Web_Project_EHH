@@ -15,7 +15,7 @@
                     <a href="/categories/"><li>Categories</li></a>
                     <a href="/topics/"><li>Topics</li></a>
                     <a href="/users/"><li>Users</li></a>
-                    <a href="/messages/"><li>Messages</li></a>
+                    <a href="/messages/"><li>Lobby</li></a>
                     {% if user %}
                     <li>Hello, <a href="/users/me/">{{ user.username }}</a></li>
                     <form action="/users/logout" method="post" style="display:inline;">
@@ -38,42 +38,20 @@
 
     {% macro load_categories(categories=None, user=None, page=None, total_pages=None, limit=None) %}
         {% if user %}
- <section id="categories">
-    {% if categories %}
-        <h2>Categories</h2>
-        <table>
-            <tr>
-                <th>Name</th>
-            </tr>
-            {% if is_list(categories) %}
-                {% for category in categories %}
-                    <tr>
-                        <td><a href="/categories/{{ category.id }}/">{{ category.name }}</a></td>
-                    </tr>
-                {% endfor %}
-                {% if categories|length < limit %}
-                    {% for _ in range(limit - categories|length) %}
-                        <tr>
-                            <td><br></td>
-                        </tr>
+        <section id="categories">
+            {% if categories %}
+                <h2>Categories</h2>
+                <div class="categories-container">
+                    {% for category in categories %}
+                        <div class="category-box">
+                            <a href="/categories/{{ category.id }}/">{{ category.name }}</a>
+                        </div>
                     {% endfor %}
-                {% endif %}
+                </div>
             {% else %}
-                <tr>
-                    <td><a href="/categories/{{ categories.id }}/">{{ categories.name }}</a></td>
-                </tr>
-                {% for _ in range(limit - 1) %}
-                    <tr>
-                        <td><br></td>
-                    </tr>
-                {% endfor %}
+                <p>{{ error }}</p>
             {% endif %}
-        </table>
-    {% else %}
-        <p>{{ error }}</p>
-    {% endif %}
-</section>
-
+        </section>
         
         
         
@@ -84,7 +62,7 @@
                 </form>
             </div>
             {% endif %}
-            <section id="pagination">
+            <section class="pagination">
                 <div>
                     {% if page > 1 %}
                     <a href="/categories?page={{ page - 1 }}">Previous</a>
@@ -117,40 +95,46 @@
         </section>
     {% endmacro %}
 
-    {% macro load_topics(topics=None, user=None, current_page=None, total_pages=None, request=None) %}
+    {% macro load_topics(topics=None, user=None, current_page=None, total_pages=None, request=None, per_page=None) %}
     {% if user %}
         <section id="topics">
             {% if topics %}
                 <h2>Topics</h2>
-                <table>
-                    <tr>
-                        <th>Title</th>
-                    </tr>
+                <div id="topics-container">
                     {% for topic in topics %}
-                    <tr>
-                        <td><a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a></td>
-                    </tr>
+                        <div class="topic-box">
+                            <a href="/topics/{{ topic.topic_id }}/">{{ topic.title }}</a>
+                        </div>
                     {% endfor %}
-                </table>
+                    <div id="create_topic">
+                        <form id='create_topic_button' action="/topics/create" method="get">
+                            <button type="submit">Create New Topic</button>
+                        </form>
+                    </div>
+                </div>
+
+
 
                 {% if current_page and total_pages and request %}
                 <div class="pagination" style="margin-top: 20px; text-align: center;">
                     {% if current_page > 1 %}
-                        <a href="{{ request.url.include_query_params(page=current_page-1) }}" 
-                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                        <a href="{{ request.url.include_query_params(page=current_page-1) }}">
                             Previous
                         </a>
+                    {%else%}
+                        <span>Previous</span>
                     {% endif %}
                     
                     <span style="margin: 0 10px;">
-                        Page {{ current_page }} of {{ total_pages }}
+                         {{ current_page }}/{{ total_pages }}
                     </span>
 
                     {% if current_page < total_pages %}
-                        <a href="{{ request.url.include_query_params(page=current_page+1) }}"
-                           style="padding: 8px 16px; margin: 0 4px; text-decoration: none; color: white; background-color: #4c2882; border-radius: 4px;">
+                        <a href="{{ request.url.include_query_params(page=current_page+1) }}">
                             Next
                         </a>
+                    {%else%}
+                        <span>Next</span>
                     {% endif %}
                 </div>
                 {% endif %}

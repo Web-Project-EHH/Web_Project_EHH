@@ -5,7 +5,16 @@
         <h1>Find a user</h1>
         <form method="get" action="/users/search">
             <label for="username">Username:</label>
+            {% if not get_user(request).is_admin %}
             <input type="text" name="username" placeholder="Enter username" required>
+            {% else %}
+            <input type="text" name="username" placeholder="Enter username">
+            {% endif %}
+            {% if get_user(request).is_admin %}
+            <label for="is_privileged">Privileged:</label>
+            <input type="checkbox" id="is_privileged" name="is_privileged" value="1">
+            <br>
+            {% endif %}
             <button type="submit">Search</button>
         </form>
         {% if users %}

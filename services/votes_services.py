@@ -62,6 +62,6 @@ def get_votes(reply_id: int):
 
         votes = votes[0][0]
 
-        return votes if isinstance(votes, int) else ''
+        return votes if isinstance(votes, int) and votes != 0 else ''
     
     return ''

@@ -3,7 +3,7 @@ from data.database import read_query, insert_query, update_query
 from data.models.category import Category, CategoryChangeName, CategoryChangeNameID, CategoryCreate, CategoryResponse, CategoryResponseAdmin
 from typing import List
 from common.exceptions import ConflictException, ForbiddenException, NotFoundException, BadRequestException
-from data.models.topic import TopicCategoryResponseAdmin, TopicCategoryResponseUser
+from data.models.topic import TopicCategoryResponseAdmin
 from data.models.user import User
 
 
@@ -136,6 +136,8 @@ def delete(category_id: int, delete_topics: bool = False) ->  str | None:
     
     if delete_topics and topics: # If delete topics was selected, check if any exist and then delete them
 
+        remove_best_replies = update_query('''UPDATE topics SET best_reply_id = NULL WHERE category_id = ?''', (category_id,))
+
         delete_from_replies = update_query('''DELETE FROM replies
                         WHERE topic_id IN (SELECT t.topic_id 
                         FROM topics t 
@@ -267,7 +269,7 @@ def lock_unlock(category_id: int) -> str | None:
 
 def is_locked(category_id: int) -> bool:
 
-    locked_row = read_query('''SELECT is_locked FROM categories WHERE category_id = ?''', (category_id,))
+    locked_row = read_query('''SELECT is_locked FROM categories WHERE category_id = ? LIMIT 1''', (category_id,))
 
     locked_bool = locked_row[0][0]
 
@@ -276,7 +278,7 @@ def is_locked(category_id: int) -> bool:
 
 def is_private(category_id: int) -> bool:
 
-    private_row = read_query('''SELECT is_private FROM categories WHERE category_id = ?''', (category_id,))
+    private_row = read_query('''SELECT is_private FROM categories WHERE category_id = ? LIMIT 1''', (category_id,))
 
     private_bool = private_row[0][0]
 
@@ -325,28 +327,19 @@ def get_by_id(category_id: int, current_user: User):
     if not exists(category_id):
         return None
     
-    if current_user.is_admin:
-        
-        category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
-                          WHERE category_id = ?''', (category_id,))
+    if not current_user:
+        return None
     
-        topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
-                        WHERE category_id = ?''', (category_id,))
         
-        return {'Category': Category.from_query_result(*category[0] if category else None), 
-            'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else None}
-        
-    else:
-        category = read_query('''SELECT category_id, name FROM categories
-                          WHERE category_id = ?''', (category_id,))
-        
-        if category:
-        
-            topics = read_query('''SELECT topic_id, title, user_id, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
-                        WHERE category_id = ?''', (category_id,))
+    category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
+                        WHERE category_id = ? LIMIT 1''', (category_id,))
+
+    topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
+                    WHERE category_id = ?''', (category_id,))
     
-            return {'Category': CategoryResponse.from_query_result(*category[0]) if category else None, 
-                    'Topics': [TopicCategoryResponseUser.from_query(*obj) for obj in topics] if topics else None}
+    return {'Category': Category.from_query_result(*category[0] if category else None), 
+        'Topics': [TopicCategoryResponseAdmin.from_query(*obj) for obj in topics] if topics else None}
+        
         
 
 def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_user: User) -> bool:
@@ -367,7 +360,7 @@ def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_
     
 
 def has_read_access(user_id: int, category_id: int) -> bool:
-    user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ? LIMIT 1", (user_id, category_id))
     return bool(user_access)
 
 
@@ -474,3 +467,19 @@ def count_all_categories(current_user: User) -> int:
 
 def category_create_form(name: str = Form(...), is_locked: bool = Form(False), is_private: bool = Form(False)):
     return CategoryCreate(name=name, is_locked=is_locked, is_private=is_private)
+
+
+def get_categories_with_write_access_only(user: User):
+
+    if not user.is_admin:
+        
+        categories = read_query('''SELECT c.category_id, c.name FROM categories c
+                            LEFT JOIN users_categories_permissions ucp ON c.category_id = ucp.category_id AND ucp.user_id = ?
+                            WHERE c.is_locked = 0 AND (c.is_private = 0 or (c.is_private = 1 AND ucp.write_access = 2))
+                            ORDER by c.name''', (user.id,))
+        
+    else:
+        
+        categories = read_query('''SELECT category_id, name FROM categories''')
+
+    return [CategoryResponse.from_query_result(*category) for category in categories] if categories else None

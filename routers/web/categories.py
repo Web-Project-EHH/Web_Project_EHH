@@ -5,11 +5,10 @@ from common.template_config import CustomJinja2Templates
 from data.models.user import User
 from services import categories_services, users_services
 from fastapi import APIRouter, Depends, Request
-from common.exceptions import BadRequestException, ForbiddenException
+from common.exceptions import BadRequestException
 from data.models.category import CategoryChangeName, CategoryChangeNameID, CategoryCreate
 from fastapi import Query
 from typing import Literal, Optional
-from mariadb import IntegrityError
 
 
 router = APIRouter(prefix='/categories', tags=['Categories'])
@@ -24,7 +23,7 @@ def get_categories(category_id: Optional[int] = Query(default=None),
                    name: Optional[str] = Query(default=None), 
                    sort_by: Literal["name", "category_id"] | None = Query(default='name'), 
                    sort: Literal["asc", "desc",] | None = Query(default='asc'),
-                   limit: int = Query(default=10, ge=1),
+                   limit: int = Query(default=15, ge=1),
                    offset: int = Query(default=0, ge=0), request: Request = None,
                    page: int = Query(default=1, ge=1)):
     
@@ -58,22 +57,29 @@ def get_category_by_id(category_id: int, request: Request = None):
 
     current_user = common.auth.get_current_user(request.cookies.get('token'))
 
+    per_page = 10
+
     if not current_user:
         return templates.TemplateResponse(name='categories.html', context={'error': 'You need to login to view this page'}, request=request)
 
-    access_level = users_services.check_user_access_level(user_id=current_user.id, category_id=category_id)
-    print(access_level)
 
-    if not current_user.is_admin: 
+    category_data = categories_services.get_by_id(category_id=category_id, current_user=current_user)
+
+    if category_data is None:
+        return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
+
+    topics = category_data['Topics']
+
+    category = category_data['Category']
+
+    if category.is_private and not current_user.is_admin: 
         if not users_services.check_user_access_level(user_id=current_user.id, category_id=category_id) > 0 :
             return templates.TemplateResponse(name='categories.html', context={'error': 'Not authorised to see this category'}, request=request)
-
-    category = categories_services.get_by_id(category_id=category_id, current_user=current_user)
 
     if not category:
         return templates.TemplateResponse(name='categories.html', context={'error': 'Category not found'}, request=request)
     
-    return templates.TemplateResponse(name='single-category.html', context={'category': category['Category'], 'topics': category['Topics']}, request=request)
+    return templates.TemplateResponse(name='single-category.html', context={'category': category, 'topics': topics, 'per_page': per_page}, request=request)
 
 
 @router.post('/create', response_model=None)
@@ -152,25 +158,28 @@ def make_category_private(category_id: int, request: Request = None):
 
 
 @router.delete('/{category_id}', response_model=None)
-def delete_category(category_id: int, delete_topics: bool = Query(False), request: Request = None):
+async def delete_category(category_id: int, request: Request = None):
 
     user = common.auth.get_current_user(request.cookies.get('token'))
 
     if not user.is_admin:
         return templates.TemplateResponse(name='categories.html', context={'error': 'User not authorised'}, request=request)
 
-    try:
-        
-        result = categories_services.delete(category_id, delete_topics)
-        
-        if not result:
-            raise BadRequestException(detail='Category could not be deleted')
+    payload = await request.json()
 
-        elif result == 'everything deleted':
-            return JSONResponse({'message': 'Category and topics deleted'}, status_code=200)
-                
-        elif result == 'only category deleted':
-            return JSONResponse({'message': 'Category deleted'}, status_code=200)
+    delete_topics = payload.get('delete_topics', False)
+
+        
+    result = categories_services.delete(category_id, delete_topics)
+    
+    if not result:
+        raise BadRequestException(detail='Category could not be deleted')
+
+    elif result == 'everything deleted':
+        return JSONResponse({'message': 'Category and topics deleted'}, status_code=200)
             
-    except IntegrityError:
-        raise ForbiddenException(detail='Cannot delete a category that includes topics.')
+    elif result == 'only category deleted':
+        return JSONResponse({'message': 'Category deleted'}, status_code=200)
+            
+    # except IntegrityError:
+    #     raise ForbiddenException(detail='Cannot delete a category that includes topics.')

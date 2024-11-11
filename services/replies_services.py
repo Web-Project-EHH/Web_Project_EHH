@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from fastapi import Form
 from data.database import read_query, insert_query, update_query
 from data.models.reply import Reply, ReplyCreate, ReplyCreateWeb, ReplyResponse
@@ -195,14 +194,14 @@ def delete(reply_id: int, current_user: User) -> str | None:
 
 def fetch_text(reply_id: int) -> str:
 
-    reply_text_row = read_query('''SELECT text FROM replies WHERE reply_id = ?''', (reply_id,))
+    reply_text_row = read_query('''SELECT text FROM replies WHERE reply_id = ? LIMIT 1''', (reply_id,))
 
     return str(reply_text_row[0][0])
 
 
 def get_reply_by_id(reply_id: int) -> Reply | None:
 
-    reply = read_query('''SELECT reply_id, text, user_id, topic_id, created, edited FROM replies WHERE reply_id = ?''', (reply_id,))
+    reply = read_query('''SELECT reply_id, text, user_id, topic_id, created, edited FROM replies WHERE reply_id = ? LIMIT 1''', (reply_id,))
 
     return Reply.from_query_result(*reply[0]) if reply else None
 
@@ -210,3 +209,10 @@ def get_reply_by_id(reply_id: int) -> Reply | None:
 def reply_create_form(text: str = Form(...)) -> ReplyCreateWeb:
 
     return ReplyCreateWeb(text=text, user_id=None)
+
+
+def is_best_reply(reply_id: int) -> bool:
+
+    best_reply_id = read_query('''SELECT best_reply_id FROM topics WHERE best_reply_id = ? LIMIT 1''', (reply_id,))
+
+    return bool(best_reply_id)
