@@ -1,13 +1,13 @@
 import re
-from fastapi import APIRouter, Body, Form, HTTPException, Query, Request, Depends
+from fastapi import APIRouter, Body, HTTPException, Query, Request, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 # from data.models.category import Category
-from data.models.reply import ReplyCreate, ReplyCreateWeb
+from data.models.reply import ReplyCreateWeb
 from services import categories_services, replies_services, topics_services, users_services
 from typing import Optional
 import common.auth
 from common.exceptions import BadRequestException, ForbiddenException
-from data.models.topic import TopicCreate, TopicBestReplyUpdate
+from data.models.topic import TopicCreate
 from services.topics_services import fetch_all_topics, verify_topic_owner
 from common.template_config import CustomJinja2Templates
 from mariadb import IntegrityError
@@ -51,7 +51,7 @@ def get_topics(
             }
         )
 
-    categories = categories_services.get_categories(limit=10000, current_user=current_user)
+    categories = categories_services.get_categories(sort_by='name', limit=10000, current_user=current_user)
     
     topics = fetch_all_topics(
         search=search,

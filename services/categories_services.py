@@ -269,7 +269,7 @@ def lock_unlock(category_id: int) -> str | None:
 
 def is_locked(category_id: int) -> bool:
 
-    locked_row = read_query('''SELECT is_locked FROM categories WHERE category_id = ?''', (category_id,))
+    locked_row = read_query('''SELECT is_locked FROM categories WHERE category_id = ? LIMIT 1''', (category_id,))
 
     locked_bool = locked_row[0][0]
 
@@ -278,7 +278,7 @@ def is_locked(category_id: int) -> bool:
 
 def is_private(category_id: int) -> bool:
 
-    private_row = read_query('''SELECT is_private FROM categories WHERE category_id = ?''', (category_id,))
+    private_row = read_query('''SELECT is_private FROM categories WHERE category_id = ? LIMIT 1''', (category_id,))
 
     private_bool = private_row[0][0]
 
@@ -332,7 +332,7 @@ def get_by_id(category_id: int, current_user: User):
     
         
     category = read_query('''SELECT category_id, name, is_locked, is_private FROM categories
-                        WHERE category_id = ?''', (category_id,))
+                        WHERE category_id = ? LIMIT 1''', (category_id,))
 
     topics = read_query('''SELECT topic_id, title, user_id, is_locked, COALESCE(best_reply_id, NULL) AS best_reply_id, category_id FROM topics
                     WHERE category_id = ?''', (category_id,))
@@ -360,7 +360,7 @@ def grant_read_access(user_id: int, category_id: int, write_access: bool, admin_
     
 
 def has_read_access(user_id: int, category_id: int) -> bool:
-    user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ?", (user_id, category_id))
+    user_access = read_query("SELECT * FROM users_categories_permissions WHERE user_id = ? AND category_id = ? LIMIT 1", (user_id, category_id))
     return bool(user_access)
 
 

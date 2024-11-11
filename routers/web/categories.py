@@ -5,11 +5,10 @@ from common.template_config import CustomJinja2Templates
 from data.models.user import User
 from services import categories_services, users_services
 from fastapi import APIRouter, Depends, Request
-from common.exceptions import BadRequestException, ForbiddenException
+from common.exceptions import BadRequestException
 from data.models.category import CategoryChangeName, CategoryChangeNameID, CategoryCreate
 from fastapi import Query
 from typing import Literal, Optional
-from mariadb import IntegrityError
 
 
 router = APIRouter(prefix='/categories', tags=['Categories'])

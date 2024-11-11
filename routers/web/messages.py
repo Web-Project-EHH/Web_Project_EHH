@@ -5,10 +5,8 @@ import json
 import uuid
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from common.template_config import CustomJinja2Templates
 from services import messages_services
-from services.messages_services import create_message
 import common.auth
 
 
