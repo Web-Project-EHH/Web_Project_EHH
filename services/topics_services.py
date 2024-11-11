@@ -1,10 +1,9 @@
 from __future__ import annotations
-from fastapi import Form, HTTPException, Query, Request
+from fastapi import Form, HTTPException
 from pydantic import ValidationError
 from data.models.reply import Reply
 from data.models.topic import TopicResponse, TopicCreate
 from data.database import read_query, update_query, insert_query
-import common.auth
 import logging
 
 from data.models.user import User

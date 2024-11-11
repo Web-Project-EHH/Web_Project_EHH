@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import RedirectResponse
 from common.exceptions import BadRequestException
 from common.template_config import CustomJinja2Templates
-from data.models.reply import Reply, ReplyCreate, ReplyEdit, ReplyEditID
+from data.models.reply import Reply, ReplyEdit, ReplyEditID
 from data.models.user import User
 from services import replies_services, topics_services, votes_services
 from datetime import datetime

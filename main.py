@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 # from routers.admin import router as admin_router
-from common.exceptions import BadRequestException, ForbiddenException, UnauthorizedException
 from routers.api.users import users_router
 from routers.api.categories import router as categories_router
 from routers.api.messages import messages_router

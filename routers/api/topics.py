@@ -1,7 +1,6 @@
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query
 from services import topics_services
 from typing import Optional, List
-import common.auth
 from common.auth import UserAuthDep
 from data.models.topic import TopicCreate, TopicBestReplyUpdate, TopicResponse
 from services.topics_services import fetch_all_topics, verify_topic_owner

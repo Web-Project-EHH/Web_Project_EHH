@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from common.exceptions import BadRequestException
 from data.models.user import User, UserLogin, UserResponse, TokenResponse
