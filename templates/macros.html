@@ -47,6 +47,11 @@
                             <a href="/categories/{{ category.id }}/">{{ category.name }}</a>
                         </div>
                     {% endfor %}
+                    {% if not is_list(categories) %}
+                        <div class="category-box empty">
+                            <a href="/categories/{{ categories.id }}/">{{ categories.name }}</a>
+                        </div>
+                {% endif %}
                 </div>
             {% else %}
                 <p>{{ error }}</p>

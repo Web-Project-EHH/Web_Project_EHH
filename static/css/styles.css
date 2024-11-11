@@ -517,3 +517,17 @@ h3 {
     font-size: 24px;
     color: #333;
 }
+
+#create_category_button {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    height: 100%; /* Adjust height as needed to center vertically in its container */
+}
+
+
+.category-box.empty {
+    min-width: 90%;
+    max-width: 90%;
+}
+
