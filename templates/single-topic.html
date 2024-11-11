@@ -12,6 +12,9 @@
         {% if get_user(request) and get_user(request).is_admin %}
             <div class="topic-actions" style="margin-top: 15px;">
                 <button id="delete-topic" class="btn btn-danger" data-topic-id="{{ topic.topic_id }}" style="background-color: #d9534f; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 3px;">Delete Topic</button>
+                <button id="lock-topic" class="btn btn-warning" data-topic-id="{{ topic.topic_id }}" style="background-color: #f0ad4e; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 3px;">
+                    {% if topic.is_locked %}Unlock Topic{% else %}Lock Topic{% endif %}
+                </button>
             </div>
         {% endif %}
     </section>
@@ -92,6 +95,8 @@
         <p>No replies found.</p>
     {% endif %}
 
+    {% if not topic.is_locked and get_user(request) %}
+    <!-- Форма за създаване на отговор -->
     <div>
         <form method="POST" action="{{topic.topic_id}}/create">
             <input type="hidden" name="topic_id" value="{{ topic.topic_id }}">
@@ -100,6 +105,13 @@
             <button type="submit">Reply</button>
         </form>
     </div>
+    {% elif topic.is_locked %}
+    <!-- Съобщение, че темата е заключена -->
+    <p>This topic is locked and cannot accept new replies.</p>
+    {% else %}
+    <!-- Съобщение за потребители, които не са влезли в системата -->
+    <p>You must be logged in to reply to this topic.</p>
+    {% endif %}
     {% else %}
         <p>Topic not found.</p>
     {% endif %}
@@ -177,6 +189,35 @@ document.querySelectorAll('.set-best-reply').forEach(button => {
             console.error('Error:', error);
         }
     });
+});
+</script>
+
+<script>
+document.getElementById('lock-topic')?.addEventListener('click', async function() {
+    const topicId = this.getAttribute('data-topic-id');
+    const currentStatus = '{{ topic.is_locked|tojson }}' === 'true';
+
+    console.log('Current status:', currentStatus);  // Добавете това за дебъгинг
+
+    if (confirm(`Are you sure you want to ${currentStatus ? 'unlock' : 'lock'} this topic?`)) {
+        try {
+            const response = await fetch(`/topics/${topicId}/locking`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.detail || 'An error occurred');
+            } else {
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
 });
 </script>
 
